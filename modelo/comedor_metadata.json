@@ -1,0 +1,20 @@
+{
+  "feature_order": [
+    "Temp_min_invierno",
+    "Prec_max_invierno",
+    "Calidad_vida_media",
+    "Poblacion_total",
+    "Renta_media",
+    "Total_paro_registrado",
+    "Paro_hombre_menor_25",
+    "Paro_hombre_25_45",
+    "Paro_hombre_45+",
+    "Paro_mujer_menor_25",
+    "Paro_mujer_25_45",
+    "Paro_mujer_45+",
+    "Paro_agricultura",
+    "Paro_industria",
+    "Paro_construccion",
+    "Paro_servicios"
+  ]
+}
