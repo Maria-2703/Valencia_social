@@ -186,5 +186,15 @@ def predict():
     
     return render_template("predict.html", prediction=prediccion, features=features, error=error_ms)
 
+@app.route('/history', methods = ["GET"])
+def history():
+
+    if db is None:
+        return "Error: Base de datos no conectada"
+    
+    # ordenar registros de 'predicciones'
+    registros = list(db['Predicciones'].find({}).sort("codigo_postal",1))
+    return render_template("history.html", records=registros)
+
 if __name__ == "__main__":
     app.run(debug = True, host = "localhost", port  = 5000)
