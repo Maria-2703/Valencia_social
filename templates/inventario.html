@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Inventario</title>
+		<style>
+			body{font-family: Arial, sans-serif; padding:20px}
+			.cols{display:flex; gap:20px}
+			.card{border:1px solid #ddd;padding:15px;border-radius:6px;flex:1}
+			table{width:100%;border-collapse:collapse;margin-top:15px}
+			th,td{border:1px solid #eee;padding:8px;text-align:left}
+		</style>
+	</head>
+	<body>
+		<h1>Inventario</h1>
+
+		<p><a href="{{ url_for('crear_producto', codigo=selected_codigo) }}">Crear producto nuevo</a></p>
+
+		<!-- Selector de Código Municipal -->
+		<form method="GET" action="{{ url_for('inventario') }}">
+			<label>Selecciona Código postal / Municipio</label>
+			<select name="codigo">
+				<option value="">-- Selecciona --</option>
+				{% for m in municipios %}
+					<option value="{{ m.code }}" {% if m.code == selected_codigo %}selected{% endif %}>{{ m.name }} ({{ m.code }})</option>
+				{% endfor %}
+			</select>
+			<button type="submit">Cargar inventario</button>
+		</form>
+
+		<h2>Listado actual</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>Nombre</th>
+					<th>Categoría</th>
+					<th>Producto</th>
+					<th>Variante</th>
+					<th>Formato</th>
+					<th>Stock total</th>
+					<th>Próx. caducidad</th>
+					<th>Coste total</th>
+					<th>Lotes</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for item in items %}
+					<tr>
+						<td>{{ item.nombre or item.item_name or '-' }}</td>
+						<td>{{ item.categoria or '-' }}</td>
+						<td>{{ item.producto or '-' }}</td>
+						<td>{{ item.variante or '-' }}</td>
+						<td>
+							{% if item.formato %}
+								{% set f = item.formato %}
+								{% if f.multipack and f.multipack|int > 1 %}
+									{{ f.multipack }} x {{ f.cantidad }} {{ f.unidad }}
+								{% else %}
+									{{ f.cantidad }} {{ f.unidad }}
+								{% endif %}
+							{% else %}
+								-
+							{% endif %}
+						</td>
+						<td>{{ item.stock_total or 0 }}</td>
+						<td>{{ item.proxima_caducidad or '-' }}</td>
+						<td>{{ item.coste_total or '-' }}</td>
+						<td>{{ item.lotes|length if item.lotes else 0 }}</td>
+						<td>
+							<a href="{{ url_for('ver_lotes', item_id=item.id) }}">Ver lotes</a>
+						</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="10">No hay items</td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</body>
+</html>
