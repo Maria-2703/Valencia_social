@@ -1075,10 +1075,6 @@ def editar_lote(item_id):
 
     return render_template('editar_lote.html', item=item, lotes=lotes)
 
-
-if __name__ == '__main__':
-    return "<h1>Comedor Social Valencia - Todo Ok</h1>"
-
 @app.route('/predict', methods = ["GET", "POST"])
 def predict():
 
