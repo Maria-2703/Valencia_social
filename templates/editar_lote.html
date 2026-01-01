@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editar lotes</title>
+    <style>
+      body{font-family:Arial,Helvetica,sans-serif;padding:16px}
+      table{border-collapse:collapse;width:100%;margin-top:12px}
+      th,td{border:1px solid #ddd;padding:8px;text-align:left}
+      label{display:block;margin-top:8px}
+      input{padding:6px;width:100%;max-width:240px}
+      .actions{margin-top:12px}
+      button{padding:8px 12px;background:#007bff;color:#fff;border:none;border-radius:4px}
+    </style>
+  </head>
+  <body>
+    <h1>Editar lotes</h1>
+
+    {% if item %}
+      <p><strong>Producto:</strong> {{ item.nombre or item.producto }}</p>
+      <form method="POST">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Lote ID</th>
+              <th>Fecha entrada</th>
+              <th>Fecha caducidad</th>
+              <th>Unidades</th>
+              <th>Coste</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lote in lotes %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ lote.lote_id or ('L-'+loop.index|string) }}</td>
+                <td>
+                  <input type="date" name="fecha_entrada_{{ loop.index0 }}" value="{% if lote.fecha_entrada %}{{ lote.fecha_entrada.strftime('%Y-%m-%d') }}{% endif %}">
+                </td>
+                <td>
+                  <input type="date" name="fecha_caducidad_{{ loop.index0 }}" value="{% if lote.fecha_caducidad %}{{ lote.fecha_caducidad.strftime('%Y-%m-%d') }}{% endif %}">
+                </td>
+                <td>
+                  <input type="number" name="lote_unidades_{{ loop.index0 }}" min="0" value="{{ lote.unidades or 0 }}">
+                </td>
+                <td>
+                  <input type="number" step="0.01" name="coste_{{ loop.index0 }}" value="{{ lote.coste or 0.0 }}">
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6">No hay lotes</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="actions">
+          <button type="submit">Guardar cambios</button>
+          <a href="{{ url_for('ver_lotes', item_id=item._id|string) }}" style="margin-left:12px">Volver</a>
+        </div>
+      </form>
+    {% else %}
+      <p style="color:red">Producto no encontrado.</p>
+      <p><a href="{{ url_for('inventario') }}">Volver al inventario</a></p>
+    {% endif %}
+  </body>
+</html>

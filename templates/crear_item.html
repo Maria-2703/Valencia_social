@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Crear producto</title>
+    <style>body{font-family:Arial,Helvetica,sans-serif;padding:16px}label{display:block;margin-top:8px}</style>
+  </head>
+  <body>
+    <h1>Nuevo producto</h1>
+
+    <!-- Form 1: elige categoría y recarga con GET -->
+    <form method="GET" action="{{ url_for('crear_producto') }}">
+      <label>Categoría</label>
+      <select name="category" required>
+        <option value="">-- Selecciona --</option>
+        {% for cat in categories %}
+          <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+
+      <button type="submit">Cargar variantes</button>
+    </form>
+
+    <hr>
+
+    <!-- Form 2: crea producto (POST) ya con variantes cargadas -->
+    <form method="POST" action="{{ url_for('crear_producto') }}">
+      <!-- Persistimos categoría -->
+      <input type="hidden" name="category" value="{{ selected_category }}">
+
+      <label>Selecciona Código postal / Municipio</label>
+      <select name="codigo_municipio" required>
+        <option value="">-- Selecciona --</option>
+        {% for m in municipios %}
+          <option value="{{ m.code }}" {% if m.code == selected_codigo %}selected{% endif %}>{{ m.name }} ({{ m.code }})</option>
+        {% endfor %}
+      </select>
+
+      {% if error_message %}
+        <p style="color:red">{{ error_message }}</p>
+      {% endif %}
+
+      <label>Producto (nombre)</label>
+      <input name="item_name" value="" required>
+
+      <label>Variante</label>
+      <select name="variante">
+        <option value="">-- (Opcional) --</option>
+        {% for v in type_category %}
+          <option value="{{ v }}">{{ v }}</option>
+        {% endfor %}
+      </select>
+
+      <h3>Formato</h3>
+      <label>Multipack</label>
+      <input name="multipack" type="number" min="1" value="1" required>
+
+      <label>Cantidad por unidad (ej. 80)</label>
+      <input name="formato_cantidad" type="number" step="any" value="0" required>
+
+      <label>Tipo</label>
+      <select name="unit" required>
+        <option value="">-- Selecciona --</option>
+        {% for u in units %}
+          <option value="{{ u }}" {% if u == selected_unit %}selected{% endif %}>{{ u }}</option>
+        {% endfor %}
+      </select>
+
+      <h3>Datos de lote</h3>
+
+      <label>Fecha entrada (YYYY-MM-DD)</label>
+      <input name="fecha_entrada" type="date" value="">
+
+      <label>Fecha caducidad (YYYY-MM-DD)</label>
+      <input name="fecha_caducidad" type="date" value="">
+
+      <label>Unidades en lote</label>
+      <input name="lote_unidades" type="number" min="0" value="0">
+
+      <label>Coste del lote</label>
+      <input name="coste" type="number" step="0.01" value="0.00">
+
+      <div style="margin-top:12px">
+        <button type="submit" {% if not selected_category %}disabled{% endif %}>Guardar producto</button>
+      </div>
+
+      {% if not selected_category %}
+        <p style="margin-top:8px;color:#555">Primero selecciona una categoría y carga variantes.</p>
+      {% endif %}
+    </form>
+
+  </body>
+</html>

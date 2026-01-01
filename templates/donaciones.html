@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donaciones - Comedor Social Valencia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 15px;
+        }
+        
+        .donations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .donation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .donation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+        }
+        
+        .card-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .card-section {
+            margin-bottom: 12px;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .section-content {
+            font-size: 14px;
+            word-break: break-word;
+        }
+        
+        .badge {
+            display: inline-block;
+            background-color: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .badge-anonimo {
+            background-color: #FF9800;
+        }
+        
+        .badge-persona {
+            background-color: #2196F3;
+        }
+        
+        .badge-organizacion {
+            background-color: #4CAF50;
+        }
+        
+        .no-donations {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 18px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .back-link:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Registro de Donaciones</h1>
+        
+        {% if donations %}
+            <div class="donations-grid">
+                {% for donation in donations %}
+                    <div class="donation-card">
+                        <div class="card-header">
+                            {{ donation.producto.categoria }} - {{ donation.producto.producto }}
+                        </div>
+                        
+                        <div class="card-section">
+                            <div class="section-title">Variante</div>
+                            <div class="section-content">{{ donation.producto.variante }}</div>
+                        </div>
+                        
+                        <div class="card-section">
+                            <div class="section-title">Cantidad</div>
+                            <div class="section-content">
+                                {{ donation.lote.unidades }} unidades
+                            </div>
+                        </div>
+                        
+                        <div class="card-section">
+                            <div class="section-title">Fecha Entrada</div>
+                            <div class="section-content">
+                                {{ donation.lote.fecha_entrada.strftime('%d/%m/%Y') if donation.lote.fecha_entrada else 'N/A' }}
+                            </div>
+                        </div>
+                        
+                        <div class="card-section">
+                            <div class="section-title">Fecha Caducidad</div>
+                            <div class="section-content">
+                                {{ donation.lote.fecha_caducidad.strftime('%d/%m/%Y') if donation.lote.fecha_caducidad else 'N/A' }}
+                            </div>
+                        </div>
+                        
+                        <div class="card-section">
+                            <div class="section-title">Donante</div>
+                            <div class="section-content">
+                                {{ donation.donante.nombre if donation.donante.nombre else 'Anónimo' }}
+                                <span class="badge badge-{{ donation.donante.tipo }}">
+                                    {{ donation.donante.tipo }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if donation.donante.contacto %}
+                            <div class="card-section">
+                                <div class="section-title">Contacto</div>
+                                <div class="section-content">{{ donation.donante.contacto }}</div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="card-section">
+                            <div class="section-title">Procesado</div>
+                            <div class="section-content">
+                                {{ donation.procesado_en.strftime('%d/%m/%Y %H:%M') if donation.procesado_en else 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-donations">
+                <p>❌ No hay donaciones registradas</p>
+            </div>
+        {% endif %}
+        
+        <a href="/" class="back-link">← Volver al inicio</a>
+    </div>
+</body>
+</html>
