@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Predicciones - Comedor Social</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1000px;
+            overflow-x: auto;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 26px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+            display: inline-block;
+            min-width: 90px;
+        }
+
+        /* Estados de Demanda */
+        .Muy-baja { background-color: #9e9e9e; }
+        .Baja { background-color: #03a9f4; }
+        .Normal { background-color: #4CAF50; }
+        .Alta { background-color: #ff9800; }
+        .Crítica { background-color: #f44336; }
+        .null-data { background-color: #607d8b; }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>📜 Histórico de Predicciones</h1>
+
+    {% if records %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Municipio</th>
+                    <th>CP</th>
+                    <th>Temp</th>
+                    <th>Habitantes</th>
+                    <th>Renta Media</th>
+                    <th>Paro Total</th>
+                    <th>Demanda</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in records %}
+                    <tr>
+                        <td><strong>{{ p.municipio or 'Desconocido' }}</strong></td>
+                        <td>{{ p.codigo_postal }}</td>
+                        <td>{{ p.temperatura }}°C</td>
+                        
+                        {# Formateo de números para que sean legibles #}
+                        <td>{{ "{:,}".format(p.habitantes|int) if p.habitantes else '0' }}</td>
+                        <td>{{ "{:,.2f}".format(p.renta_media|float) if p.renta_media else '0.00' }}€</td>
+                        <td>{{ p.paro_registrado or '0' }}</td>
+                        
+                        <td>
+                            {% if p.demanda %}
+                                <span class="badge {{ p.demanda.replace(' ', '-') }}">
+                                    {{ p.demanda }}
+                                </span>
+                            {% else %}
+                                <span class="badge null-data">Sin Datos</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            No se encontraron registros en la base de datos.
+        </div>
+    {% endif %}
+
+    <a href="/predict" class="back-link">← Volver a predicción</a>
+</div>
+
+</body>
+</html>

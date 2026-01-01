@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de Demanda - Comedor Social</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box; /* Para que el padding no rompa el ancho */
+            font-size: 16px;
+        }
+        input:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        /* Estilos para Mensajes de Alerta y Resultados */
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result-box {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 25px;
+            text-align: center;
+        }
+        .result-details {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+            border-top: 1px solid #c8e6c9;
+            padding-top: 10px;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🍽️ Predicción Demanda</h1>
+
+        {% if error %}
+            <div class="alert alert-error">
+                <strong>⚠️ Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        {% if prediction %}
+            <div class="result-box">
+                <h2>Resultado de la IA</h2>
+                <p style="font-size: 1.2em; font-weight: bold;">{{ prediction.split('.')[0] }}</p>
+                
+                <div class="result-details">
+                    <p>Datos registrados:</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>📍 Municipio: <strong>{{ features.municipio }}</strong></li>
+                        <li>📮 CP: <strong>{{ features.codigo_postal }}</strong></li>
+                        <li>🌡️ Temp: <strong>{{ features.temperatura }}ºC</strong></li>
+                    </ul>
+                    <small>✅ Datos guardados en MongoDB</small>
+                </div>
+            </div>
+            
+            <a href="/predict" class="back-link">← Realizar otra predicción</a>
+
+        {% else %}
+            <form action="/predict" method="POST">
+                <div class="form-group">
+                    <label for="municipio">Municipio:</label>
+                    <input type="text" id="municipio" name="municipio" placeholder="Ej: Valencia" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="codigo_postal">Código Postal:</label>
+                    <input type="text" id="codigo_postal" name="codigo_postal" placeholder="Ej: 46001" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="temperatura">Temperatura (ºC):</label>
+                    <input type="number" id="temperatura" name="temperatura" step="0.1" placeholder="Ej: 18.5" required>
+                </div>
+
+                <button type="submit">Calcular Demanda</button>
+            </form>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
