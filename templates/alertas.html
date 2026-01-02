@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Alertas - Comedor Social</title>
+		<style>
+			body{font-family:Arial,Helvetica,sans-serif;padding:20px}
+			.card{border:1px solid #e6e6e6;padding:12px;border-radius:6px;margin-bottom:12px}
+			.tipo-donacion{background:#e9f7ef;border-left:6px solid #28a745}
+			.tipo-stock{background:#fff7e6;border-left:6px solid #f0ad4e}
+			.tipo-caducidad{background:#fdecea;border-left:6px solid #d9534f}
+			.meta{color:#666;font-size:13px;margin-top:6px}
+			.titulo{font-weight:700}
+		</style>
+	</head>
+	<body>
+		<h1>Alertas</h1>
+		{% if not records %}
+			<p>No hay alertas.</p>
+		{% else %}
+			{% for r in records %}
+				{% set is_don = r.get('donacion_id') is not none %}
+				{% set is_stock = r.get('stock_total') is not none %}
+				{% set is_cad = r.get('proxima_caducidad') is not none %}
+
+				<div class="card {% if is_don %}tipo-donacion{% elif is_stock %}tipo-stock{% elif is_cad %}tipo-caducidad{% endif %}">
+					<div style="display:flex; justify-content:space-between; align-items:center;">
+						<div class="titulo">
+						{% if is_don %}
+							Nueva donación: {{ r.get('producto') }}
+						{% elif is_stock %}
+							Stock bajo: {{ r.get('producto') }}
+						{% elif is_cad %}
+							Próxima caducidad: {{ r.get('producto') }}
+						{% else %}
+							Alerta: {{ r }}
+						{% endif %}
+						</div>
+						<div>
+							<form method="post" action="{{ url_for('delete_alert', alert_id=r.id) }}" onsubmit="return confirm('¿Eliminar esta alerta?');" style="display:inline">
+								<button type="submit" style="background:#d9534f;color:#fff;border:none;padding:6px 8px;border-radius:4px;cursor:pointer">Eliminar</button>
+							</form>
+						</div>
+					</div>
+
+					<div class="mensaje">
+						{% if is_don %}
+							Se ha registrado una nueva donación para <strong>{{ r.get('producto') }}</strong> — Lote <strong>{{ r.get('lote_id') }}</strong> con <strong>{{ r.get('unidades',0) }}</strong> unidades. Procesado: {{ r.get('procesado_en') or r.get('generado_en') }}.
+						{% elif is_stock %}
+							El producto <strong>{{ r.get('producto') }}</strong> tiene <strong>{{ r.get('stock_total',0) }}</strong> unidades, por debajo del mínimo de <strong>{{ r.get('minimo_alerta',0) }}</strong>. Por favor, reponer existencias.
+						{% elif is_cad %}
+							El producto <strong>{{ r.get('producto') }}</strong> tiene una próxima caducidad el <strong>{{ r.get('proxima_caducidad') }}</strong>. Revisar para evitar desperdicio.
+						{% else %}
+							Detalle: {{ r }}
+						{% endif %}
+					</div>
+
+					<div class="meta">Generado: {{ r.get('generado_en') or r.get('procesado_en') }}</div>
+				</div>
+			{% endfor %}
+		{% endif %}
+	</body>
+</html>

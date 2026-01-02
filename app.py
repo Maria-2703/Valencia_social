@@ -1,6 +1,6 @@
 from urllib import response
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dotenv import load_dotenv
 import cohere
 import json
@@ -157,7 +157,7 @@ def get_donation():
     "proxima_caducidad": {
         "$date": "2026-01-04T00:00:00.000Z"
     },
-    "minimo_alerta": 20,
+    "minimo_alerta": 1,
     "coste_total": 5.55,
     "audit": {
         "creado_en": {
@@ -207,7 +207,7 @@ def get_donation():
     "proxima_caducidad": {
         "$date": "2026-01-29T00:00:00.000Z"
     },
-    "minimo_alerta": 20,
+    "minimo_alerta": 1,
     "coste_total": 60,
     "audit": {
         "creado_en": {
@@ -261,7 +261,7 @@ def get_donation():
     "proxima_caducidad": {
         "$date": "2026-03-27T00:00:00.000Z"
     },
-    "minimo_alerta": 20,
+    "minimo_alerta": 1,
     "coste_total": 148,
     "audit": {
         "creado_en": {
@@ -288,7 +288,7 @@ def get_donation():
         "cantidad": 0,
         "unidad": "..."
         },
-        "minimo_alerta": 20,
+        "minimo_alerta": 1,
         "Codigo_municipio": 46001
     },
     "lote": {
@@ -394,6 +394,92 @@ def parse_date(s):
 
                     return None
                 
+def generar_alerta():
+
+    collection_alert = db['Alertas']
+    collection_inv = db['Inventario']
+    collection_don = db['Donaciones']
+    alertas = []
+
+    inventario = collection_inv.find()
+    existente_docs = list(collection_alert.find({}))
+    try:
+        ignored_docs = list(db['AlertasIgnoradas'].find({}))
+    except Exception:
+        ignored_docs = []
+    donaciones = collection_don.find()
+
+    # build sets of existing referenced ids to avoid duplicate alerts
+    existing_inventario_ids = set([a.get('inventario_id') for a in existente_docs if a.get('inventario_id') is not None])
+    existing_donacion_ids = set([a.get('donacion_id') for a in existente_docs if a.get('donacion_id') is not None])
+
+    # ignored references (user-suppressed)
+    ignored_inventario_ids = set([d.get('ref_id') for d in ignored_docs if d.get('tipo') == 'inventario' and d.get('ref_id') is not None])
+    ignored_donacion_ids = set([d.get('ref_id') for d in ignored_docs if d.get('tipo') == 'donacion' and d.get('ref_id') is not None])
+
+    for item in inventario:
+
+        if item.get('stock_total', 0) <= item.get('minimo_alerta', 1) and item.get('_id') not in existing_inventario_ids and item.get('_id') not in ignored_inventario_ids:
+
+            alerta = {
+                'inventario_id': item.get('_id'),
+                'producto': item.get('producto'),
+                'categoria': item.get('categoria'),
+                'stock_total': item.get('stock_total', 0),
+                'minimo_alerta': item.get('minimo_alerta', 1),
+                'generado_en': datetime.utcnow()
+            }
+
+            alertas.append(alerta)
+
+        # comprobar próxima caducidad dentro de los próximos 7 días (manejar tipos date/datetime/strings)
+        pd_raw = item.get('proxima_caducidad')
+
+        pd_dt = None
+
+        if pd_raw:
+
+            if isinstance(pd_raw, str):
+                pd_dt = parse_date(pd_raw)
+
+            elif isinstance(pd_raw, datetime):
+                pd_dt = pd_raw
+
+            elif isinstance(pd_raw, date):
+                pd_dt = datetime(pd_raw.year, pd_raw.month, pd_raw.day)
+
+        if pd_dt:
+            pd_date = pd_dt.date()
+            if datetime.utcnow().date() <= pd_date <= (datetime.utcnow().date() + timedelta(days=7)) and item.get('_id') not in existing_inventario_ids and item.get('_id') not in ignored_inventario_ids:
+                alerta = {
+                    'inventario_id': item.get('_id'),
+                    'producto': item.get('producto'),
+                    'categoria': item.get('categoria'),
+                    'proxima_caducidad': pd_dt,
+                    'generado_en': datetime.utcnow()
+                }
+                alertas.append(alerta)
+
+    for don in donaciones:
+        if don.get('_id') not in existing_donacion_ids and don.get('_id') not in ignored_donacion_ids:
+            alerta = {
+                'donacion_id': don.get('_id'),
+                'producto': don.get('producto', {}).get('producto'),
+                'lote_id': don.get('lote', {}).get('lote_id'),
+                'unidades': don.get('lote', {}).get('unidades', 0),
+                'procesado_en': don.get('procesado_en'),
+                'generado_en': datetime.utcnow()
+            }
+            alertas.append(alerta)
+
+    if alertas:
+        try:
+            collection_alert.insert_many(alertas)
+        except Exception:
+            # insertion may fail; ignore to avoid crash
+            pass
+
+                
 def process_donation(donation):
 
     collection_inv = db['Inventario']
@@ -473,7 +559,7 @@ def process_donation(donation):
             'lotes': [lote_doc],
             'stock_total': unidades,
             'proxima_caducidad': fecha_cad,
-            'minimo_alerta': producto_info.get('minimo_alerta', 20),
+            'minimo_alerta': producto_info.get('minimo_alerta', 1),
             'coste_total': coste,
             'audit': {
                 'creado_en': datetime.utcnow(),
@@ -489,13 +575,13 @@ def process_donation(donation):
         'lote': lote_doc,
         'donante': donante_info,
         'procesado_en': datetime.utcnow(),
+        'mostrar': True,
         'inventario_id': inv_id
     }
 
     collection_don.insert_one(donation_record)
 
     return donation_record
-
 
 def simulate_donation_from_inventory():
 
@@ -533,7 +619,7 @@ def simulate_donation_from_inventory():
             'producto': item.get('producto'),
             'variante': item.get('variante'),
             'formato': item.get('formato'),
-            'minimo_alerta': item.get('minimo_alerta', 20),
+            'minimo_alerta': item.get('minimo_alerta', 1),
             'Codigo_municipio': item.get('Codigo_municipio')
         },
         'lote': {
@@ -558,6 +644,7 @@ def simulate_donation_from_inventory():
         donation['donante']['nombre'] = random.choice(orgs)
 
     return donation
+
 def post_mongo(features, demanda):
     collection = db['Predicciones']
     codigo = features["codigo_postal"]
@@ -640,6 +727,10 @@ def connect_db():
 @app.route('/')
 def index():
 
+    collection_alert = db['Alertas']
+
+    total_alertas = collection_alert.count_documents({})
+
     choice =  random.randint(0, 1)
 
     if choice == 1:
@@ -658,7 +749,9 @@ def index():
 
     process_donation(record)
 
-    return "<h1>Comedor Social Valencia - Todo Ok</h1>"
+    generar_alerta()
+
+    return render_template('index.html', total_alertas=total_alertas)
 
 
 @app.route('/donacion', methods=['GET'])
@@ -675,9 +768,6 @@ def donacion():
         don['id'] = str(don.get('_id'))
 
     return render_template('donaciones.html', donations=donations)
-
-
-
 
 @app.route('/inventario', methods=['GET', 'POST'])
 def inventario():
@@ -919,7 +1009,7 @@ def crear_producto():
             'lotes': lotes,
             'stock_total': stock_total,
             'proxima_caducidad': proxima_caducidad,
-            'minimo_alerta': 20,
+            'minimo_alerta': 1,
             'coste_total': coste_total,
             'audit': {
                 'creado_en': datetime.utcnow(),
@@ -1118,6 +1208,40 @@ def history():
     # ordenar registros de 'predicciones'
     registros = list(db['Predicciones'].find({}).sort("codigo_postal",1))
     return render_template("history.html", records=registros)
+
+@app.route('/alertas', methods = ["GET"])
+def alertas():
+
+    # (re)generate alerts first so the list is up-to-date
+    generar_alerta()
+
+    registros = list(db['Alertas'].find({}).sort("generado_en", -1))
+    for r in registros:
+        r['id'] = str(r.get('_id'))
+
+    return render_template("alertas.html", records=registros)
+
+
+@app.route('/alertas/delete/<string:alert_id>', methods=['POST'])
+def delete_alert(alert_id):
+
+    collection_alert = db['Alertas']
+    collection_ignored = db['AlertasIgnoradas']
+
+    try:
+        alert_doc = collection_alert.find_one({'_id': ObjectId(alert_id)})
+        if alert_doc:
+            # record suppression so the alert isn't re-created
+            if alert_doc.get('donacion_id'):
+                collection_ignored.insert_one({'tipo': 'donacion', 'ref_id': alert_doc.get('donacion_id'), 'created_at': datetime.utcnow()})
+            if alert_doc.get('inventario_id'):
+                collection_ignored.insert_one({'tipo': 'inventario', 'ref_id': alert_doc.get('inventario_id'), 'created_at': datetime.utcnow()})
+
+        collection_alert.delete_one({'_id': ObjectId(alert_id)})
+    except Exception:
+        pass
+
+    return redirect(url_for('alertas'))
 
 if __name__ == "__main__":
     app.run(debug = True, host = "localhost", port  = 5000)
