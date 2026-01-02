@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Campañas</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        /* --- ESTILOS DEL FORMULARIO --- */
+        .search-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn-generate {
+            background-color: #0095f6; /* Azul Instagram */
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .btn-generate:hover { background-color: #007bb5; }
+
+        /* --- ESTILOS DE LA TARJETA INSTAGRAM --- */
+        .instagram-card {
+            background-color: white;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .header {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #efefef;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #333;
+            margin-right: 10px;
+        }
+        .username { font-weight: bold; font-size: 14px; }
+
+        .ad-image-area {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            color: #333;
+            /* Aquí usaremos el color dinámico */
+            position: relative;
+            background-color: var(--bg-color, #f0f2f5);
+        }
+
+        .overlay {
+            background: rgba(255,255,255, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            border-radius: 15px;
+            width: 80%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .main-emoji { font-size: 80px; margin-bottom: 10px; display: block; }
+
+        .slogan-text {
+            font-size: 24px;
+            font-weight: 900;
+            line-height: 1.2;
+            margin: 0;
+            text-transform: uppercase;
+            color: #333;
+        }
+
+        .action-bar { padding: 10px 15px; display: flex; gap: 15px; }
+        .icon { font-size: 24px; cursor: pointer; }
+
+        .caption-area { padding: 0 15px 20px 15px; }
+        .likes { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .caption-text { font-size: 14px; line-height: 1.5; }
+        .hashtags { color: #00376b; margin-top: 5px; display: block; }
+        
+        .alert-badge {
+            background: #ff3b30;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .back-btn {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #666;
+        }
+        
+        .error-msg {
+            color: #721c24;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    {% if anuncio %}
+        <div class="instagram-card">
+            <div class="header">
+                <div class="avatar" style="background-color: {{ anuncio.color_fondo }};"></div> 
+                <div>
+                    <div class="username">ComedorSocial_Valencia</div>
+                    <div style="font-size: 12px; color: #888;">Valencia, España</div>
+                </div>
+            </div>
+
+            <div class="ad-image-area" style="--bg-color: {{ anuncio.color_fondo }};">
+                <div class="overlay">
+                    <div class="alert-badge">⚠️ Necesitamos tu ayuda</div>
+                    <span class="main-emoji">{{ anuncio.emoji_icono }}</span>
+                    <h1 class="slogan-text">{{ anuncio.slogan }}</h1>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <span class="icon">❤️</span>
+                <span class="icon">💬</span>
+                <span class="icon">🚀</span>
+            </div>
+
+            <div class="caption-area">
+                <div class="likes">Les gusta a 1,240 personas</div>
+                <div class="caption-text">
+                    <strong>ComedorSocial_Valencia</strong> {{ anuncio.mensaje_principal }}
+                    <br><br>
+                    👇 <strong>Punto de entrega:</strong><br>
+                    Calle Solidaridad 12, Valencia.
+                    
+                    <span class="hashtags">
+                        #{{ anuncio.producto_heroe | replace(" ", "") }} #ValenciaSolidaria #ZeroHunger
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <a href="/anuncio" class="back-btn">← Crear otra campaña</a>
+
+    {% else %}
+
+    <div class="search-container">
+            <h2>📢 Generador de Campañas</h2>
+            <p style="color: #666; font-size: 0.9em;">Analiza el inventario y crea un post de Instagram para pedir lo que falta.</p>
+            
+            {% if error %}
+                <div class="error-msg">{{ error }}</div>
+            {% endif %}
+
+            <form action="/anuncio" method="POST">
+                <label for="cp" style="display:block; text-align:left; font-weight:bold; color:#444;">Código Postal del Centro:</label>
+                <input type="text" id="cp" name="codigo_postal" placeholder="Ej: 46001" required>
+                
+                <button type="submit" class="btn-generate">✨ Generar Anuncio con IA</button>
+            </form>
+        </div>
+
+    {% endif %}
+
+</body>
+</html>

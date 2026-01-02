@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chef Virtual - Comedor Social</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdfbf7; /* Tono crema suave */
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            color: #d35400; /* Naranja quemado (gastronómico) */
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Estilos del Formulario */
+        .search-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 25px;
+            background-color: #d35400;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #a04000;
+        }
+
+        /* ESTILOS PARA EL MENÚ GENERADO (MARKDOWN) */
+        .menu-content {
+            line-height: 1.6;
+        }
+
+        .menu-content h3 {
+            background-color: #fae5d3;
+            padding: 10px;
+            border-radius: 5px;
+            color: #873600;
+            margin-top: 30px;
+        }
+
+        .menu-content ul {
+            background-color: #fff;
+            border-left: 4px solid #d35400;
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        .menu-content li {
+            margin-bottom: 10px;
+            padding: 5px 0;
+        }
+
+        /* Estilo de la Tabla generada por la IA */
+        .menu-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        .menu-content th, .menu-content td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .menu-content th {
+            background-color: #d35400;
+            color: white;
+        }
+
+        .menu-content tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* Spinner de carga */
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #d35400;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none; /* Oculto por defecto */
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>👨‍🍳 Chef Virtual de Aprovechamiento</h1>
+
+        <div class="search-box">
+            <form action="/chef" method="POST" onsubmit="mostrarCarga()">
+                <label for="codigo">Código Postal del Centro:</label>
+                <input type="text" name="codigo_postal" placeholder="Ej: 46001" required>
+                <button type="submit">Generar Menú</button>
+            </form>
+            <div id="loading" class="loader"></div>
+            <p id="loading-text" style="display:none; color: #666;">Analizando inventario y caducidades...</p>
+        </div>
+
+        {% if menu %}
+            <hr>
+            <div id="resultado-menu" class="menu-content">
+                </div>
+
+            <script>
+                // Tomamos el texto crudo que envió Python (con saltos de línea y símbolos)
+                const rawMarkdown = `{{ menu | safe }}`;
+                
+                // Usamos la librería marked para convertirlo a HTML real
+                document.getElementById('resultado-menu').innerHTML = marked.parse(rawMarkdown);
+            </script>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="window.print()" style="background-color: #333;">🖨️ Imprimir Menú y Lista</button>
+            </div>
+        {% endif %}
+
+        {% if "Ocurrió un error" in menu|string %}
+             {% endif %}
+
+    </div>
+
+    <script>
+        function mostrarCarga() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading-text').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
