@@ -714,6 +714,170 @@ def predict_demand(codigo_postal, temperatura):
     
     return label_int, prediction_str, None
 
+# Función que crea un menú del día usando Cohere
+def ai_chef(inventario, donaciones, demanda):
+
+    # 1. Convertir los diccionarios a STRING (Texto) para que la IA los lea
+    # ensure_ascii=False permite que salgan tildes y ñ correctamente
+    inventario_texto = json.dumps(inventario, indent=2, ensure_ascii=False, default=str)
+    donaciones_texto = json.dumps(donaciones, indent=2, ensure_ascii=False)
+
+    prompt = f"""Actúa como un Chef Ejecutivo y experto en logística de alimentos para un comedor 
+    social benéfico. Tu objetivo es diseñar un menú diario nutritivo, reconfortante y eficiente, 
+    minimizando el desperdicio de alimentos.
+
+    Te voy a proporcionar tres datos:
+    1. INVENTARIO: Alimentos que ya tenemos almacenados (secos, latas, congelados).
+    2. DONACIONES DEL DÍA: Alimentos frescos o perecederos que acaban de llegar.
+    3. DEMANDA: la demanda que se espera que haya en el comedor (demanda muy baja, baja, normal, alta o crítica).
+
+    Tus instrucciones son:
+    - PRIORIDAD 1: Usa primero los productos cerca de vencer.
+    - PRIORIDAD 2: Completa los platos con otros productos del inventario.
+    - El menú debe constar de: Entrante/Primer plato, Plato Principal y Postre/Fruta.
+    - Calcula las cantidades totales necesarias para cocinar para la demanda indicada.
+    - Si faltan ingredientes críticos para una receta lógica, sugiere el sustituto más cercano del inventario.
+    
+    DATOS DE HOY:
+    
+    [INVENTARIO]
+    {inventario_texto}
+
+    [DONACIONES DEL DÍA]
+    {donaciones_texto}
+
+    [DEMANDA]
+    {demanda}
+    ---
+    Genera la respuesta con el siguiente formato:
+
+    ### 🍽️ MENÚ DEL DÍA PROPUESTO
+    * **Primer Plato:** [Nombre del plato]
+    * **Segundo Plato:** [Nombre del plato]
+    * **Postre:** [Nombre del plato]
+    * **Acompañamiento:** [Pan, bebida, etc.]
+
+    ### 💡 JUSTIFICACIÓN DE APROVECHAMIENTO
+    Explicación breve de por qué has elegido estos platos basándote en los productos perecederos o cerca de su vencimiento.
+
+    ### 📝 LISTA DE PRODUCCIÓN (CANTIDADES A COCINAR)
+    | Ingrediente | Origen (Donación/Inventario) | Cantidad por persona (aprox) | CANTIDAD TOTAL A USAR |
+    |---|---|---|---|
+    | [Ingrediente 1] | [Origen] | [gr/ml] | [Total Kg/L] |
+    | [Ingrediente 2] | [Origen] | [gr/ml] | [Total Kg/L] |
+    ..."""
+
+    try: 
+        response = co.chat(
+            model="command-r-plus-08-2024",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        }
+                    ]
+                }
+            ]
+        )
+
+        return response.message.content[0].text
+
+    except Exception as e:
+        # Si falla (URL inválida, error de Cohere, etc.), imprimimos el error en la consola
+        print(f"Error generando el menú: {e}")
+        # Devolvemos None para que la app sepa que falló, pero NO se rompa (Error 500)
+        return f"<h3>Ocurrió un error al generar el menú:</h3><p>{str(e)}</p>"
+    
+# Función que genera una campaña publicitaria con Cohere
+def ai_campaign(inventario):
+
+    inventario_texto = json.dumps(inventario, indent=2, ensure_ascii=False, default=str)
+
+    prompt = f"""Actúa como un Director de Marketing experto en campañas sociales y ONGs.
+    Tu objetivo es crear una campaña publicitaria de alto impacto para incentivar la donación 
+    de una categoría específica de alimentos que es crítica ahora mismo en nuestro inventario.
+
+    CONTEXTO:
+    La gente suele donar siempre lo mismo (arroz, pasta, legumbres secas). Estamos muy agradecidos, 
+    pero tenemos un exceso de carbohidratos y una carencia crítica de nutrientes esenciales o 
+    productos básicos específicos. Necesitamos educar al donante para que su ayuda sea más efectiva.
+
+    TU TAREA:
+    Analiza el inventario y detecta qué **Categoría Esencial** está AUSENTE o es MUY ESCASA.
+    No te centres en lo que va a caducar. Céntrate en lo que FALTA para una dieta digna.
+
+    LISTA DE CONTROL (Prioridad de búsqueda):
+    1. Proteínas (Huevos, Carne, Pescado, Legumbres).
+    2. Lácteos y Calcio (Leche, Yogur, Queso).
+    3. Grasas Saludables (Aceite de Oliva, Aceite de Girasol).
+    4. Hidratación/Básicos (Agua, Leche en polvo).
+    5. Vitaminas (Fruta fresca, Verdura fresca).
+
+    INVENTARIO ACTUAL:
+    {inventario_texto}
+
+    PÚBLICO OBJETIVO:
+    Vecinos del barrio, familias jóvenes y comercio local.
+
+    INSTRUCCIONES:
+    1. Compara el inventario con la lista de control.
+    2. Si hay mucho carbohidrato (arroz/pasta) pero falta leche, huevos o aceite, TU ELECCIÓN DEBE SER EL PRODUCTO FALTANTE.
+    3. Genera el contenido para un anuncio visual de Instagram.
+
+    FORMATO DE RESPUESTA (Solo JSON válido, nada más):
+    {{
+        "producto_heroe": "Nombre del producto faltante (ej: Leche)",
+        "slogan": "Frase impactante de 5 palabras máximo",
+        "mensaje_principal": "Texto breve (2 frases) explicando que tenemos arroz pero nos falta dignidad/proteína.",
+        "color_fondo": "Código Hexadecimal que represente la emoción o el producto (ej: #FFFFFF para leche, #FFD700 para aceite)",
+        "emoji_icono": "Un solo emoji que represente el producto (ej: 🥛, 🥚, 💧)"
+    }}"""
+
+    print("--- 1. Enviando a IA... ---")
+
+    try: 
+        response = co.chat(
+            model="command-r-plus-08-2024",
+            messages=[{"role": "user", "content": [{"type": "text", "text": prompt}]}],
+            response_format={"type": "json_object"} # Forzamos modo JSON
+        )
+
+        texto_crudo = response.message.content[0].text
+        print(f"--- 2. La IA respondió: ---\n{texto_crudo}\n-------------------------")
+
+        # --- LIMPIEZA DE JSON (CRÍTICO) ---
+        # A veces la IA pone ```json al principio. Lo borramos.
+        texto_limpio = texto_crudo.replace("```json", "").replace("```", "").strip()
+        
+        # Convertimos el texto a Diccionario Python
+        datos_anuncio = json.loads(texto_limpio)
+
+        return datos_anuncio
+    
+    except json.JSONDecodeError as e:
+        print(f"❌ ERROR JSON: La IA no devolvió un JSON válido.\nError: {e}")
+        # Devolvemos el backup para que se vea algo
+        return {
+            "producto_heroe": "Alimentos Frescos",
+            "slogan": "Error de Formato IA",
+            "mensaje_principal": "La IA devolvió texto plano en vez de JSON. Mira la consola.",
+            "color_fondo": "#FF5733", # Naranja de error
+            "emoji_icono": "🐛"
+        }
+        
+    except Exception as e:
+        print(f"❌ ERROR GENERAL: {e}")
+        return {
+            "producto_heroe": "Ayuda General",
+            "slogan": "Dona lo que puedas",
+            "mensaje_principal": "Hubo un error de conexión con la IA.",
+            "color_fondo": "#4CAF50",
+            "emoji_icono": "❤️"
+        }
+
 #Antes de que se procese cada petición en la app, nos conectamos a la base de datos
 @app.before_request
 def connect_db():
@@ -1619,6 +1783,58 @@ def stats_predicciones():
     pred_paro_muni = list(db["Predicciones"].aggregate(pipeline_pred_paro))
 
     return render_template("stats_predicciones.html", pred_por_cp=pred_por_cp, pred_por_tipo=pred_por_tipo, pred_renta_demanda=pred_renta_demanda, pred_hab_muni=pred_hab_muni, pred_renta_muni=pred_renta_muni, pred_paro_muni=pred_paro_muni)
+
+@app.route('/chef', methods = ["GET", "POST"])
+def chef():
+
+    menu = None
+
+    if request.method == 'GET':
+        return render_template('chef.html', inventario=None, donaciones=None, demanda=None, menu=menu)
+    
+    codigo = request.form.get("codigo_postal")
+    
+    if not codigo:
+        return render_template("chef.html", menu="<h3>Error:</h3><p>Introduce un código postal.</p>")
+    
+    inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
+    donaciones = list(db['Donaciones'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
+    prediccion = db['Predicciones'].find_one(
+                {"Codigo_municipio": int(codigo)}, 
+                sort=[('_id', -1)])
+    
+    if prediccion:
+        demanda = prediccion.get('demanda', 'Normal')
+    else:
+        demanda = 'Normal'
+
+    # usar ultima prediccion para igualarlo a la demanda
+    menu = ai_chef(inventario, donaciones, demanda)
+
+    return render_template("chef.html", menu=menu)
+
+@app.route('/anuncio', methods=['GET', 'POST'])
+def anuncio():
+
+    campaign = None
+    error_msg = None
+
+    if request.method == 'GET':
+        return render_template('anuncio.html', anuncio=campaign)
+    
+    codigo = request.form.get("codigo_postal")
+    
+    if not codigo:
+        return render_template("chef.html", menu="<h3>Error:</h3><p>Introduce un código postal.</p>")
+    
+    inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
+    
+    if not inventario:
+        error_msg = f"No hay inventario para el CP {int(codigo)}"
+    else:
+        campaign = ai_campaign(inventario)
+
+    return render_template("anuncio.html", anuncio=campaign, error_msg=error_msg)
 
 if __name__ == "__main__":
     app.run(debug = True, host = "localhost", port  = 5000)
