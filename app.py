@@ -1243,5 +1243,382 @@ def delete_alert(alert_id):
 
     return redirect(url_for('alertas'))
 
+@app.route('/stats', methods = ["GET"])
+def stats():
+    # agregar predicciones por codigo postal
+    pipeline_pred = [
+        {"$group": 
+        {  
+            "_id": "$codigo_postal",  # agrupar por cp
+            "num_predicciones":{"$sum":1}   # suma numero de pred
+        }},
+        {"$project": 
+        {  
+            "_id":0,  # ocular id mongo
+            "codigo_postal":"$_id",  
+            "num_predicciones":1
+        }},
+        {"$sort":{"num_predicciones":-1}}  # ordenar desc
+    ]
+    pred_por_cp = list(db["Predicciones"].aggregate(pipeline_pred))  
+
+    # agregar donaciones por municipio
+    pipeline_don = [
+        {"$unwind": "$lote"},  # descomponer array lote para acceder a unidades
+        {"$group":
+        {  
+            "_id": "$producto.Codigo_municipio",  
+            "total_unidades":{"$sum":"$lote.unidades"}  # sumar unidades donada
+        }},
+        {"$project":{
+            "_id":0,
+            "municipio":"$_id",
+            "total_unidades":1
+        }},
+        {"$sort": {"total_unidades":-1}}
+    ]
+    don_por_muni = list(db["Donaciones"].aggregate(pipeline_don))
+
+    # agregar inventario por producto
+    pipeline_inv = [
+        {"$project":
+        {  # solo campos necesarios
+            "_id": 0,
+            "nombre": 1,  
+            "stock_total":1
+        }},
+        {"$sort": {"stock_total":-1}}
+    ]
+    inv_por_prod = list(db["Inventario"].aggregate(pipeline_inv))
+
+    return render_template("stats.html", pred_por_cp=pred_por_cp, don_por_muni=don_por_muni, inv_por_prod=inv_por_prod)
+
+@app.route("/stats/donaciones", methods=["GET"])
+def stats_donaciones():
+    # agregar donaciones por municipio
+    pipeline_don = [
+        {"$unwind": "$lote"},  # descomponer array lote para acceder a unidades
+        {"$group":
+        {  
+            "_id": "$producto.Codigo_municipio",  
+            "total_unidades":{"$sum":"$lote.unidades"}  # sumar unidades donada
+        }},
+        {"$project":{
+            "_id":0,
+            "municipio":"$_id",
+            "total_unidades":1
+        }},
+        {"$sort": {"total_unidades":-1}}
+    ]
+    don_por_muni = list(db["Donaciones"].aggregate(pipeline_don))
+
+    # agregar donaciones por fecha procesado
+    pipeline_don_fecha = [
+        {"$unwind": "$lote"},
+        {"$group":{
+            "_id": {"$dateToString":{"format":"%Y-%m-%d", "date":"$procesado_en"}},
+            "total_unidades":{"$sum":"$lote.unidades"}
+        }},
+        {"$project":{
+            "_id":0,
+            "fecha": "$_id",
+            "total_unidades":1
+        }},
+        {"$sort": {"fecha":1}}
+    ]
+    don_por_fecha = list(db["Donaciones"].aggregate(pipeline_don_fecha))
+
+    # agregar donaciones por tipo de donante
+    pipeline_don_donante = [
+        {"$group": {
+            "_id": "$donante.tipo",
+            "total_donaciones": {"$sum": 1},
+            "total_unidades": {"$sum": "$lote.unidades"}
+        }},
+        {"$project": {
+            "_id":0,
+            "tipo_donante":"$_id",
+            "total_donaciones": 1,
+            "total_unidades": 1   
+        }},
+        {"$sort":{"total_donaciones":-1}}
+    ]
+    don_por_donante = list(db["Donaciones"].aggregate(pipeline_don_donante))
+
+    # agregar donaciones por categoria de producto
+    pipeline_don_categoria = [
+        { "$group":{
+            "_id": "$producto.categoria",
+            "total_donaciones": {"$sum":1},
+            "total_unidades": {"$sum":"$lote.unidades"}
+        }},
+        {"$project": {
+            "_id":0,
+            "categoria":"$_id",
+            "total_donaciones":1,
+            "total_unidades":1
+        }},
+        {"$sort":{"total_unidades":-1}}
+    ]
+    don_por_categoria = list(db["Donaciones"].aggregate(pipeline_don_categoria))
+
+    # agregar donaciones por producto
+    pipeline_don_prod = [
+        { "$group":{
+            "_id": "$producto.producto",
+            "total_donaciones": {"$sum":1},
+            "total_unidades": {"$sum":"$lote.unidades"}
+        }},
+        {"$project": {
+            "_id":0,
+            "producto":"$_id",
+            "total_donaciones":1,
+            "total_unidades":1
+        }},
+        {"$sort":{"total_unidades":-1}}
+    ]
+    don_por_producto = list(db["Donaciones"].aggregate(pipeline_don_prod))  
+
+    # agregar donaciones por caducidad
+    pipeline_don_caducidad = [
+        {"$unwind": "$lote"},
+        {"$group":{
+            "_id": "$lote.fecha_caducidad",
+            "total_unidades":{"$sum":"$lote.unidades"}
+        }},
+        {"$project":{
+            "_id":0,
+            "fecha_caducidad":"$_id",
+            "total_unidades":1
+        }},
+        {"$sort": {"fecha_caducidad":1}}
+    ]
+    don_por_caducidad = list(db["Donaciones"].aggregate(pipeline_don_caducidad))
+    
+    return render_template("stats_donaciones.html", don_por_muni=don_por_muni, don_por_fecha=don_por_fecha, don_por_donante=don_por_donante, don_por_categoria=don_por_categoria, don_por_producto=don_por_producto, don_por_caducidad=don_por_caducidad)
+
+@app.route("/stats/inventario")
+def stats_inventario():
+    # agregar inventario por producto
+    pipeline_inv = [
+        {"$project":
+        {  # solo campos necesarios
+            "_id": 0,
+            "nombre": 1,  
+            "stock_total":1
+        }},
+        {"$sort": {"stock_total":-1}}
+    ]
+    inv_por_prod = list(db["Inventario"].aggregate(pipeline_inv))
+
+    # agregar inventario por categoria
+    pipeline_inv_cat = [
+        {"$group":{
+            "_id": "$categoria",
+            "total_stock":{"$sum":"$stock_total"}
+        }},
+        {"$project":{
+            "_id":0,
+            "categoria":"$_id",
+            "total_stock":1,
+        }},
+        {"$sort":{"total_stock":-1}}
+    ]
+    inv_por_cat = list(db["Inventario"].aggregate(pipeline_inv_cat))
+
+    # agregar inventario por gastos por fecha
+    pipeline_inv_coste = [
+        {"$unwind":"$lotes"
+        },
+        {"$group":{
+            "_id":{"$dateToString":{"format":"%Y-%m-%d", "date":"$lotes.fecha_entrada"}},
+            "total_gasto":{"$sum": "$lotes.coste"}
+        }},
+        {"$project":{
+            "_id":0,
+            "fecha":"$_id",
+            "total_gasto":1
+        }},
+        {"$sort":{"fecha":1}}
+    ]
+    inv_por_coste = list(db["Inventario"].aggregate(pipeline_inv_coste))
+
+    # agregar inventario por donante/ proveedor
+    pipeline_inv_proveedor = [
+        {"$unwind":"$lotes"
+        },
+        {"$group":{
+            "_id":{
+                "$cond": {
+                    "if": {"$eq": ["$lotes.coste", 0]},  # coste = 0 es donacion
+                    "then": "donacion",
+                    "else": "proveedor"  # fue comprado al proveedor
+                }
+            },
+            "total_unidades":{"$sum": "$lotes.unidades"}
+        }},
+        {"$project":{
+            "_id":0,
+            "tipo":"$_id",
+            "total_unidades":1
+        }},
+        {"$sort":{"total_unidades":-1}}
+    ]
+    inv_por_proveedor = list(db["Inventario"].aggregate(pipeline_inv_proveedor))
+
+    # agregar inventario por proximas caducidades
+    pipeline_inv_caducidad = [
+        {"$unwind":"$lotes"
+        },
+        {"$match":{
+            "lotes.fecha_caducidad":{"$ne":None}
+        }},
+        {"$group":{
+            "_id":"$lotes.fecha_caducidad",
+            "total_unidades":{"$sum": "$lotes.unidades"}
+        }},
+        {"$project":{
+            "_id":0,
+            "fecha_caducidad":"$_id",
+            "total_unidades":1
+        }},
+        {"$sort":{"fecha_caducidad":1}}
+    ]
+    inv_por_caducidad = list(db["Inventario"].aggregate(pipeline_inv_caducidad))
+
+    # agregar inventario por municipio
+    pipeline_inv_muni = [
+        {"$group":{
+            "_id":"$Codigo_municipio",
+            "total_stock":{"$sum":"$stock_total"}
+        }},
+        {"$project":{
+            "_id":0,
+            "municipio":"$_id",
+            "total_stock":1,
+        }},
+        {"$sort":{"total_stock":-1}}
+    ]
+    inv_por_muni =  list(db["Inventario"].aggregate(pipeline_inv_muni))
+
+    return render_template("stats_inventario.html", inv_por_prod=inv_por_prod, inv_por_muni=inv_por_muni, inv_por_cat=inv_por_cat, inv_por_coste=inv_por_coste, inv_por_proveedor=inv_por_proveedor, inv_por_caducidad=inv_por_caducidad)
+
+@app.route("/stats/predicciones")
+def stats_predicciones():
+    # agregar predicciones por codigo postal
+    pipeline_pred = [
+        {"$group": 
+        {  
+            "_id": "$codigo_postal",  # agrupar por cp
+            "num_predicciones":{"$sum":1}   # suma numero de pred
+        }},
+        {"$project": 
+        {  
+            "_id":0,  # ocular id mongo
+            "codigo_postal":"$_id",  
+            "num_predicciones":1
+        }},
+        {"$sort":{"num_predicciones":-1}}  # ordenar desc
+    ]
+    pred_por_cp = list(db["Predicciones"].aggregate(pipeline_pred))  
+
+    # agregar predicciones por tipo de demanda
+    pipeline_pred_tipo = [
+        {"$group":
+        {
+            "_id":"$demanda",
+            "total_predicciones":{"$sum":1}
+        }},
+        {"$project":{
+            "_id":0,
+            "tipo_demanda":"$_id",
+            "total_predicciones":1
+        }},
+        {"$sort":{"total_predicciones":-1}}
+    ]
+    pred_por_tipo = list(db["Predicciones"].aggregate(pipeline_pred_tipo))
+
+    # agregar promedio de renta por nivel de demanda
+    pipeline_pred_renta_demanda = [
+        {"$group":
+        {
+            "_id":"$demanda",
+            "avg_renta":{"$avg":"$renta_media"}
+        }},
+        {"$project":{
+            "_id":0,
+            "tipo_demanda":"$_id",
+            "avg_renta":1
+        }},
+        {"$sort":{"tipo_demanda":1}}
+    ]
+    pred_renta_demanda = list(db["Predicciones"].aggregate(pipeline_pred_renta_demanda))
+
+    # agregar habitantes por municipio
+    pipeline_pred_muni = [
+        {"$group":
+        {
+            "_id":"$codigo_postal",
+            "avg_habitantes":{"$avg":"$habitantes"}
+        }},
+        {"$project":{
+            "_id":0,
+            "codigo_postal":"$_id",
+            "avg_habitantes":1
+        }},
+        {"$sort":{"avg_habitantes":-1}}
+    ]
+    pred_hab_muni = list(db["Predicciones"].aggregate(pipeline_pred_muni))
+
+    # agregar renta media por municipio
+    pipeline_pred_renta = [
+        {"$group":
+        {
+            "_id":"$codigo_postal",
+            "avg_renta":{"$avg":"$renta_media"}
+        }},
+        {"$project":{
+            "_id":0,
+            "codigo_postal":"$_id",
+            "avg_renta":1
+        }},
+        {"$sort":{"avg_renta":-1}}
+    ]
+    pred_renta_muni = list(db["Predicciones"].aggregate(pipeline_pred_renta))
+
+    # agregar promedio de renta por nivel de demanda
+    pipeline_pred_renta_demanda = [
+        {"$group":
+        {
+            "_id":"$demanda",
+            "avg_renta":{"$avg":"$renta_media"}
+        }},
+        {"$project":{
+            "_id":0,
+            "tipo_demanda":"$_id",
+            "avg_renta":1
+        }},
+        {"$sort":{"tipo_demanda":1}}
+    ]
+    pred_renta_demanda = list(db["Predicciones"].aggregate(pipeline_pred_renta_demanda))
+
+    # agregar paro registrado por municipio
+    pipeline_pred_paro = [
+        {"$group":
+        {
+            "_id":"$codigo_postal",
+            "avg_paro":{"$avg":"$paro_registrado"}
+        }},
+        {"$project":{
+            "_id":0,
+            "codigo_postal":"$_id",
+            "avg_paro":1
+        }},
+        {"$sort":{"avg_paro":-1}}
+    ]
+    pred_paro_muni = list(db["Predicciones"].aggregate(pipeline_pred_paro))
+
+    return render_template("stats_predicciones.html", pred_por_cp=pred_por_cp, pred_por_tipo=pred_por_tipo, pred_renta_demanda=pred_renta_demanda, pred_hab_muni=pred_hab_muni, pred_renta_muni=pred_renta_muni, pred_paro_muni=pred_paro_muni)
+
 if __name__ == "__main__":
     app.run(debug = True, host = "localhost", port  = 5000)

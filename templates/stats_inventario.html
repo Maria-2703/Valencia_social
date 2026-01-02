@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estadísticas de Inventario - Comedor Social</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 30px;
+        }
+
+        .chart-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        canvas {
+            max-height: 350px;
+        }
+
+        /* Botón volver */
+        .btn-back {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: background 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background-color: #43a047;
+        }
+
+        .btn-container {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📦 Estadísticas de Inventario</h1>
+
+    <div class="grid">
+        <!-- Inventario por Producto -->
+        <div class="chart-card">
+            <h2 class="chart-title">Stock por Producto</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartProducto"></canvas>
+            </div>
+        </div>
+
+        <!-- Inventario por Categoría -->
+        <div class="chart-card">
+            <h2 class="chart-title">Stock por Categoría</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartCategoria"></canvas>
+            </div>
+        </div>
+
+        <!-- Inventario por Proveedor/Donación -->
+        <div class="chart-card">
+            <h2 class="chart-title">Unidades por Proveedor / Donación</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartProveedor"></canvas>
+            </div>
+        </div>
+
+        <!-- Inventario por Caducidad -->
+        <div class="chart-card">
+            <h2 class="chart-title">Próximas Caducidades</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartCaducidad"></canvas>
+            </div>
+        </div>
+
+        <!-- Inventario por Municipio -->
+        <div class="chart-card">
+            <h2 class="chart-title">Stock por Municipio</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartMunicipio"></canvas>
+            </div>
+        </div>
+
+        <!-- Inventario por Gasto -->
+        <div class="chart-card">
+            <h2 class="chart-title">Gastos por Fecha de Entrada</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartCoste"></canvas>
+            </div>
+        </div>
+
+        <!-- Botón volver -->
+        <div class="btn-container">
+            <a href="/stats" class="btn-back">← Volver a estadísticas</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ================= INVENTARIO POR PRODUCTO ================= */
+    const invProducto = {{ inv_por_prod | tojson }};
+    new Chart(document.getElementById("chartProducto"), {
+        type: "bar",
+        data: {
+            labels: invProducto.map(i => {
+                // extraer solo el nombre después del guion y quitar lo que esté entre paréntesis
+                const partes = i.nombre.split('-');
+                let nombre = partes.length > 1 ? partes[1].trim() : i.nombre;
+                nombre = nombre.replace(/\(.*\)/, '').trim(); // eliminar "(10 x 1.0 L)"
+                return nombre;
+            }),
+            datasets: [{
+                label: "Stock Total",
+                data: invProducto.map(i => i.stock_total),
+                backgroundColor: '#FFDCDC',
+                borderColor: '#FF9F9F',
+                borderWidth: 1
+            }]
+        },
+        options: { 
+            indexAxis: 'y', // gráfico horizontal
+            responsive: true,
+            scales: {
+                y: {
+                    ticks: {
+                        maxRotation: 0,
+                        minRotation: 0
+                    }
+                }
+            }
+        }
+    });
+
+    /* ================= INVENTARIO POR CATEGORIA ================= */
+    const invCategoria = {{ inv_por_cat | tojson }};
+    new Chart(document.getElementById("chartCategoria"), {
+        type: "bar",
+        data: {
+            labels: invCategoria.map(c => c.categoria),
+            datasets: [{
+                label: "Stock Total",
+                data: invCategoria.map(c => c.total_stock),
+                backgroundColor: '#DDF6D2',
+                borderColor: '#6B5B95',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    /* ================= INVENTARIO POR PROVEEDOR/DONACION ================= */
+    const invProveedor = {{ inv_por_proveedor | tojson }};
+    new Chart(document.getElementById("chartProveedor"), {
+        type: "pie",
+        data: {
+            labels: invProveedor.map(p => p.tipo),
+            datasets: [{
+                label: "Unidades",
+                data: invProveedor.map(p => p.total_unidades),
+                backgroundColor: ['#4CAF50', '#FFC107']
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    /* ================= INVENTARIO POR CADUCIDAD ================= */
+    const invCaducidad = {{ inv_por_caducidad | tojson }};
+    new Chart(document.getElementById("chartCaducidad"), {
+        type: "line",
+        data: {
+            labels: invCaducidad.map(c => {
+                const d = new Date(c.fecha_caducidad);
+                const mm = String(d.getMonth() + 1).padStart(2,'0');
+                const yy = String(d.getFullYear()).slice(-2);
+                return `${mm}/${yy}`;
+            }),
+            datasets: [{
+                label: "Unidades",
+                data: invCaducidad.map(c => c.total_unidades),
+                backgroundColor: '#FFE8CD',
+                borderColor: '#FF5722',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    /* ================= INVENTARIO POR MUNICIPIO ================= */
+    const invMuni = {{ inv_por_muni | tojson }};
+    new Chart(document.getElementById("chartMunicipio"), {
+        type: "bar",
+        data: {
+            labels: invMuni.map(m => m.municipio),
+            datasets: [{
+                label: "Stock Total",
+                data: invMuni.map(m => m.total_stock),
+                backgroundColor: '#F1EAFF',
+                borderColor: '#6B5B95',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    /* ================= INVENTARIO POR COSTE ================= */
+    const invCoste = {{ inv_por_coste | tojson }};
+    new Chart(document.getElementById("chartCoste"), {
+        type: "line",
+        data: {
+            labels: invCoste.map(c => c.fecha),
+            datasets: [{
+                label: "Gasto Total",
+                data: invCoste.map(c => c.total_gasto),
+                backgroundColor: '#DDF6D2',
+                borderColor: '#4CAF50',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true }
+    });
+</script>
+
+</body>
+</html>

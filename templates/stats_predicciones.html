@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estadísticas de Predicciones - Comedor Social</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 25px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chart-title {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 350px;
+        }
+
+        .back-button {
+            display: block;
+            margin: 40px auto 0 auto;
+            padding: 12px 25px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 25px;
+            text-align: center;
+            transition: background 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #43a047;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr; /* 1 gráfico por fila en pantallas pequeñas */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Estadísticas de Predicciones</h1>
+
+    <div class="grid">
+        <!-- Predicciones por Código Postal - Horizontal Bar -->
+        <div class="chart-card">
+            <h2 class="chart-title">Predicciones por Código Postal</h2>
+            <canvas id="chartCP"></canvas>
+        </div>
+
+        <!-- Predicciones por Tipo de Demanda - Donut -->
+        <div class="chart-card">
+            <h2 class="chart-title">Predicciones por Tipo de Demanda</h2>
+            <canvas id="chartTipo"></canvas>
+        </div>
+
+        <!-- Promedio Renta por Municipio - Vertical Bar -->
+        <div class="chart-card">
+            <h2 class="chart-title">Promedio Renta por Municipio</h2>
+            <canvas id="chartRentaMuni"></canvas>
+        </div>
+
+        <!-- Promedio Renta por Tipo de Demanda - Columnas -->
+        <div class="chart-card">
+            <h2 class="chart-title">Promedio Renta por Tipo de Demanda</h2>
+            <canvas id="chartRentaDemanda"></canvas>
+        </div>
+
+        <!-- Promedio Habitantes por Municipio - Barras Verticales -->
+        <div class="chart-card">
+            <h2 class="chart-title">Promedio Habitantes por Municipio</h2>
+            <canvas id="chartHabMuni"></canvas>
+        </div>
+
+        <!-- Paro Registrado por Municipio - Barras Verticales -->
+        <div class="chart-card">
+            <h2 class="chart-title">Paro Registrado por Municipio</h2>
+            <canvas id="chartParoMuni"></canvas>
+        </div>
+    </div>
+
+    <a href="/stats" class="back-button">⬅ Volver a Estadísticas</a>
+</div>
+
+<script>
+    const predPorCP = {{ pred_por_cp | tojson }};
+    const predPorTipo = {{ pred_por_tipo | tojson }};
+    const predRentaMuni = {{ pred_renta_muni | tojson }};
+    const predRentaDemanda = {{ pred_renta_demanda | tojson }};
+    const predHabMuni = {{ pred_hab_muni | tojson }};
+    const predParoMuni = {{ pred_paro_muni | tojson }};
+
+    // Predicciones por Código Postal - Horizontal Bar
+    new Chart(document.getElementById("chartCP"), {
+        type: 'bar',
+        data: {
+            labels: predPorCP.map(d => d.codigo_postal),
+            datasets: [{
+                label: 'Número de Predicciones',
+                data: predPorCP.map(d => d.num_predicciones),
+                backgroundColor: '#FFDCDC'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true }, y: { ticks: { autoSkip: false } } }
+        }
+    });
+
+    // Predicciones por Tipo de Demanda - Donut
+    new Chart(document.getElementById("chartTipo"), {
+        type: 'doughnut',
+        data: {
+            labels: predPorTipo.map(d => d.tipo_demanda),
+            datasets: [{
+                data: predPorTipo.map(d => d.total_predicciones),
+                backgroundColor: ['#FFDCDC','#DDF6D2','#FFE8CD','#F1EAFF','#F6FFDE']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+
+    // Promedio Renta por Municipio - Vertical Bar
+    new Chart(document.getElementById("chartRentaMuni"), {
+        type: 'bar',
+        data: {
+            labels: predRentaMuni.map(d => d.codigo_postal),
+            datasets: [{
+                label: 'Promedio Renta (€)',
+                data: predRentaMuni.map(d => d.avg_renta),
+                backgroundColor: '#DDF6D2'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+        }
+    });
+
+    // Promedio Renta por Tipo de Demanda - Columnas
+    new Chart(document.getElementById("chartRentaDemanda"), {
+        type: 'bar',
+        data: {
+            labels: predRentaDemanda.map(d => d.tipo_demanda),
+            datasets: [{
+                label: 'Promedio Renta (€)',
+                data: predRentaDemanda.map(d => d.avg_renta),
+                backgroundColor: ['#FFDCDC','#DDF6D2','#FFE8CD','#F1EAFF','#F6FFDE']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+        }
+    });
+
+    // Promedio Habitantes por Municipio - Barras Verticales
+    new Chart(document.getElementById("chartHabMuni"), {
+        type: 'bar',
+        data: {
+            labels: predHabMuni.map(d => d.codigo_postal),
+            datasets: [{
+                label: 'Promedio Habitantes',
+                data: predHabMuni.map(d => d.avg_habitantes),
+                backgroundColor: '#F1EAFF'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+        }
+    });
+
+    // Paro Registrado por Municipio - Barras Verticales
+    new Chart(document.getElementById("chartParoMuni"), {
+        type: 'bar',
+        data: {
+            labels: predParoMuni.map(d => d.codigo_postal),
+            datasets: [{
+                label: 'Paro Registrado',
+                data: predParoMuni.map(d => d.avg_paro),
+                backgroundColor: '#F6FFDE'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+        }
+    });
+</script>
+
+</body>
+</html>

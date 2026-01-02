@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estadísticas de Donaciones - Comedor Social</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 50px;
+            color: #4CAF50;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+        }
+
+        .chart-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 25px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .chart-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .chart-title {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+
+        .btn-back {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: background 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background-color: #43a047;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Estadísticas de Donaciones</h1>
+
+    <div class="grid">
+        <!-- Donaciones por Fecha -->
+        <div class="chart-card">
+            <h2 class="chart-title">Donaciones por Fecha de Procesado</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartFecha"></canvas>
+            </div>
+        </div>
+
+        <!-- Donaciones por Próxima Caducidad -->
+        <div class="chart-card">
+            <h2 class="chart-title">Donaciones por Próxima Caducidad</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartCaducidad"></canvas>
+            </div>
+        </div>
+
+        <!-- Donaciones por Municipio -->
+        <div class="chart-card">
+            <h2 class="chart-title">Donaciones por Municipio</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartMunicipio"></canvas>
+            </div>
+        </div>
+
+        <!-- Donaciones por Producto -->
+        <div class="chart-card">
+            <h2 class="chart-title">Donaciones por Producto</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartProducto"></canvas>
+            </div>
+        </div>
+
+        <!-- Donaciones por Categoría de Producto -->
+        <div class="chart-card">
+            <h2 class="chart-title">Donaciones por Categoría de Producto</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartCategoria"></canvas>
+            </div>
+        </div>
+
+        <!-- Donaciones por Tipo de Donante -->
+        <div class="chart-card">
+            <h2 class="chart-title">Donaciones por Tipo de Donante</h2>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <canvas id="chartDonante"></canvas>
+            </div>
+        </div>
+
+        <!-- Botón para volver -->
+        <div style="grid-column: 1 / -1; text-align:center;">
+            <a href="/stats" class="btn-back">← Volver a estadísticas</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==== Datos de Flask ====
+    const donPorMuni = {{ don_por_muni | tojson }};
+    const donPorFecha = {{ don_por_fecha | tojson }};
+    const donPorDonante = {{ don_por_donante | tojson }};
+    const donPorCategoria = {{ don_por_categoria | tojson }};
+    const donPorProducto = {{ don_por_producto | tojson }};
+    const donPorCaducidad = {{ don_por_caducidad | tojson }};
+
+    // ===== Donaciones por Fecha =====
+    new Chart(document.getElementById("chartFecha"), {
+        type: 'line',
+        data: {
+            labels: donPorFecha.map(d => d.fecha),
+            datasets: [{
+                label: 'Unidades Donadas',
+                data: donPorFecha.map(d => d.total_unidades),
+                backgroundColor: 'rgba(221,246,210,0.4)',
+                borderColor: '#4CAF50',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true }, x: { title: { display: true, text: 'Fecha' } } }
+        }
+    });
+
+    // ===== Donaciones por Próxima Caducidad =====
+    new Chart(document.getElementById("chartCaducidad"), {
+        type: 'line',
+        data: {
+            labels: donPorCaducidad.map(d => new Date(d.fecha_caducidad).toLocaleDateString('es-ES', {month:'2-digit', year:'2-digit'})),
+            datasets: [{
+                label: 'Unidades Donadas',
+                data: donPorCaducidad.map(d => d.total_unidades),
+                backgroundColor: 'rgba(255,216,220,0.4)',
+                borderColor: '#FF9F9F',
+                fill: true,
+                tension: 0.2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true }, x: { title: { display: true, text: 'Mes/Año Caducidad' } } }
+        }
+    });
+
+    // ===== Donaciones por Municipio =====
+    new Chart(document.getElementById("chartMunicipio"), {
+        type: 'bar',
+        data: {
+            labels: donPorMuni.map(d => d.municipio),
+            datasets: [{
+                label: 'Unidades Donadas',
+                data: donPorMuni.map(d => d.total_unidades),
+                backgroundColor: '#FFDCDC',
+                borderColor: '#FF9F9F',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { title: { display: true, text: 'Municipio' } } } }
+    });
+
+    // ===== Donaciones por Producto =====
+    new Chart(document.getElementById("chartProducto"), {
+        type: 'bar',
+        data: {
+            labels: donPorProducto.map(d => d.producto),
+            datasets: [{
+                label: 'Unidades Donadas',
+                data: donPorProducto.map(d => d.total_unidades),
+                backgroundColor: '#FFE8CD',
+                borderColor: '#FF9F9F',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { title: { display: true, text: 'Producto' } } } }
+    });
+
+    // ===== Donaciones por Categoría =====
+    new Chart(document.getElementById("chartCategoria"), {
+        type: 'bar',
+        data: {
+            labels: donPorCategoria.map(d => d.categoria),
+            datasets: [{
+                label: 'Unidades Donadas',
+                data: donPorCategoria.map(d => d.total_unidades),
+                backgroundColor: '#DDF6D2',
+                borderColor: '#4CAF50',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { title: { display: true, text: 'Categoría' } } } }
+    });
+
+    // ===== Donaciones por Tipo de Donante =====
+    new Chart(document.getElementById("chartDonante"), {
+        type: 'doughnut',
+        data: {
+            labels: donPorDonante.map(d => d.tipo_donante),
+            datasets: [{
+                label: 'Total de Donaciones',
+                data: donPorDonante.map(d => d.total_donaciones),
+                backgroundColor: ['#FF9F9F','#FFDCDC','#4CAF50','#DDF6D2','#FFE8CD'],
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
+        },
+        options: { responsive: true }
+    });
+
+</script>
+
+</body>
+</html>
