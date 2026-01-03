@@ -1,38 +1,218 @@
-<!doctype html>
-<html lang="es">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Comedor Social Valencia</title>
-		<style>
-			.nav { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid #eee; }
-			.brand { font-weight:700; font-size:18px; }
-			.bell { position:relative; display:inline-block; margin-left:12px; }
-			.badge { position:absolute; top:-6px; right:-6px; background:#d9534f; color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; }
-			a { color:inherit; text-decoration:none; }
-			.container { padding:20px; }
-		</style>
-	</head>
-	<body>
-		<header class="nav">
-			<div class="brand">Comedor Social Valencia</div>
-			<div>
-				<a href="/alertas" title="Alertas">
-					<span class="bell" aria-hidden="true">
-						<!-- simple bell SVG -->
-						<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M12 2C10.3431 2 9 3.34315 9 5V6.08997C6.16279 7.00953 4 9.83086 4 13V17L2 19V20H22V19L20 17V13C20 9.83086 17.8372 7.00953 15 6.08997V5C15 3.34315 13.6569 2 12 2Z" stroke="#333" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M9.5 20C9.5 21.1046 10.3954 22 11.5 22H12.5C13.6046 22 14.5 21.1046 14.5 20" stroke="#333" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-						<span class="badge">{{ total_alertas or 0 }}</span>
-					</span>
-				</a>
-			</div>
-		</header>
+{% extends "base.html" %}
 
-		<main class="container">
-			<h1>Inicio</h1>
-			<p>Bienvenido al panel del Comedor Social. Puedes ver las alertas pulsando la campana.</p>
-		</main>
-	</body>
-</html>
+{% block content %}
+
+<style>
+    /* --- HERO SECTION --- */
+    .hero-section {
+        background: 
+            /* 1. Degradado Izquierda -> Derecha (Para leer el texto) */
+            linear-gradient(to right, #fbf8f1 35%, rgba(251, 248, 241, 0.5) 60%, rgba(251, 248, 241, 0) 100%),
+            /* 2. Degradado Abajo -> Arriba (PARA QUITAR LA LÍNEA DE CORTE) */
+            linear-gradient(to top, #fbf8f1 5%, rgba(251, 248, 241, 0) 30%),
+            /* 3. La Imagen */
+            url('https://ssvp.es/wp-content/uploads/2024/07/comedores-sociales-para-personas-sin-hogar.jpg');
+        
+        background-size: cover;
+        background-position: center 30%; /* Subimos un poco el foco de la foto */
+        background-repeat: no-repeat;
+        
+        /* Reducimos padding para que quepa todo en pantalla */
+        padding: 60px 0 100px 0; 
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-text h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 3.2rem; /* Un pelín más pequeño para compactar */
+        color: #000;
+        margin-bottom: 15px;
+        line-height: 1.1;
+    }
+
+    .hero-text p {
+        font-size: 1.1rem;
+        color: #444;
+        max-width: 550px;
+        font-weight: 500;
+    }
+
+    /* Tarjeta flotante fecha */
+    .info-card {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-left: 5px solid var(--primary-color);
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        max-width: 320px; /* Un poco más compacta */
+        width: 100%;
+        backdrop-filter: blur(4px);
+    }
+
+    /* --- CONTENEDOR DE TARJETAS --- */
+    .white-box-container {
+        /* Subimos más el bloque para compactar la vista */
+        margin-top: -90px; 
+        position: relative; 
+        z-index: 10; 
+        padding-bottom: 40px;
+    }
+
+    /* Estilo Tarjeta */
+    .action-card {
+        background: white;
+        border: 2px solid var(--secondary-color);
+        border-radius: 20px;
+        
+        /* AJUSTE DE TAMAÑO: Más altas pero controlando el ancho */
+        padding: 25px 20px; 
+        min-height: 140px; /* Forzamos altura */
+        max-width: 480px;  /* Limitamos el ancho máximo para que sean "estrechas" */
+        margin: 0 auto;    /* Las centramos en su columna */
+        
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(31, 78, 95, 0.15);
+        background-color: #fbfeff;
+    }
+
+    .card-icon {
+        width: 65px; 
+        height: 65px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .card-icon i { font-size: 2.8rem; }
+    
+    .card-icon img {
+        width: 50px;
+        height: 50px;
+        object-fit: contain;
+    }
+
+    .card-content h3 {
+        font-weight: 800;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        color: #000;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-fake {
+        background-color: var(--secondary-color);
+        color: white;
+        padding: 4px 18px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        display: inline-block;
+        margin-top: 4px;
+    }
+</style>
+
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <div class="hero-text">
+                    <h1>Alimentando cuerpos,<br>nutriendo esperanzas.</h1>
+                    <p class="mt-2">Tu centro de control para una gestión humana y eficiente del comedor.</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-5 d-flex justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+                <div class="info-card">
+                    <h6 class="text-uppercase text-muted mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">Hoy</h6>
+                    <h4 class="mb-0 date-display fw-bold" style="font-family: 'Lato', sans-serif;">CARGANDO...</h4>
+                    <hr style="margin: 10px 0;">
+                    <small class="text-muted" style="font-size: 0.8rem;">MENÚ: NO SE HA GENERADO AÚN</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="white-box-container container">
+    <div class="row g-4 justify-content-center">
+        
+        <div class="col-md-6 col-lg-5">
+            <a href="/predict" class="action-card">
+                <div class="card-icon">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1164/1164394.png" alt="Bola Mágica">
+                </div>
+                <div class="card-content">
+                    <h3>Predecir</h3>
+                    <p class="text-muted small mb-1">Predicción de demanda</p>
+                    <span class="btn-fake">Predecir</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-5">
+            <a href="/inventario" class="action-card">
+                <div class="card-icon">
+                    <i class="fas fa-warehouse" style="color: #e2a03f;"></i>
+                </div>
+                <div class="card-content">
+                    <h3>Inventario</h3>
+                    <p class="text-muted small mb-1">Alimentos disponibles</p>
+                    <span class="btn-fake">Ver</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-5">
+            <a href="/donacion" class="action-card">
+                <div class="card-icon">
+                    <i class="fas fa-box-open" style="color: #c96c4d;"></i>
+                </div>
+                <div class="card-content">
+                    <h3>Donaciones</h3>
+                    <p class="text-muted small mb-1">Alimentos donados</p>
+                    <span class="btn-fake">Ver</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-5">
+            <a href="/generar" class="action-card">
+                <div class="card-icon">
+                    <i class="fas fa-wand-magic-sparkles" style="color: #f4d35e;"></i>
+                </div>
+                <div class="card-content">
+                    <h3>Generar</h3>
+                    <p class="text-muted small mb-1">Menú o Anuncio</p>
+                    <span class="btn-fake">Crear</span>
+                </div>
+            </a>
+        </div>
+
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateElement = document.querySelector('.date-display');
+        const now = new Date();
+        const options = { day: 'numeric', month: 'long' }; 
+        dateElement.textContent = now.toLocaleDateString('es-ES', options).toUpperCase();
+    });
+</script>
+
+{% endblock %}

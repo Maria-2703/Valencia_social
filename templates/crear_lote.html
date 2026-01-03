@@ -1,53 +1,109 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crear lote</title>
-    <style>
-      body { font-family: Arial, Helvetica, sans-serif; padding: 16px }
-      label { display: block; margin-top: 12px; font-weight: bold }
-      input, textarea { width: 100%; max-width: 400px; padding: 6px; box-sizing: border-box }
-      button { margin-top: 16px; padding: 8px 16px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer }
-      button:hover { background-color: #0052a3 }
-      .back-link { margin-top: 16px }
-      .back-link a { color: #0066cc; text-decoration: none }
-      .back-link a:hover { text-decoration: underline }
-    </style>
-  </head>
-  <body>
-    <h1>Crear lote</h1>
+{% extends "base.html" %}
 
+{% block content %}
+
+<div class="container py-5">
+    
     {% if item %}
-      <p><strong>Producto:</strong> {{ item.nombre }}</p>
-
-      <form method="POST">
-        <label>Fecha entrada (YYYY-MM-DD)</label>
-        <input name="fecha_entrada" type="date" required>
-
-        <label>Fecha caducidad (YYYY-MM-DD)</label>
-        <input name="fecha_caducidad" type="date" required>
-
-        <label>Unidades en lote</label>
-        <input name="lote_unidades" type="number" min="1" value="1" required>
-
-        <label>Coste del lote</label>
-        <input name="coste" type="number" step="0.01" value="0.00" required>
-
-        <div>
-          <button type="submit">Guardar lote</button>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-serif fw-bold mb-0" style="color: var(--secondary-color);">Añadir Stock (Nuevo Lote)</h2>
+                <p class="text-muted mb-0">Registra una nueva entrada de mercancía para este producto.</p>
+            </div>
+            <a href="{{ url_for('ver_lotes', item_id=item._id|string) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver al Producto
+            </a>
         </div>
-      </form>
 
-      <div class="back-link">
-        <a href="{{ url_for('inventario') }}">Volver al inventario</a>
-      </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; background-color: #f8f9fa;">
+                    <div class="card-body p-4 d-flex align-items-center">
+                        <div class="bg-white p-3 rounded-circle shadow-sm me-3 text-secondary">
+                            <i class="fas fa-box-open fs-3"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1">{{ item.nombre or item.producto }}</h5>
+                            <div class="text-muted small">
+                                <span class="badge bg-secondary me-1">{{ item.categoria }}</span>
+                                Stock Actual: <strong>{{ item.stock_total or 0 }} unidades</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-edit me-2"></i>Datos del Nuevo Lote</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST">
+                            
+                            <div class="row g-4 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Fecha de Entrada</label>
+                                    <input type="date" name="fecha_entrada" id="fecha_entrada" class="form-control" required>
+                                    <div class="form-text small">Fecha de recepción de la mercancía.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Fecha de Caducidad</label>
+                                    <input type="date" name="fecha_caducidad" class="form-control" required>
+                                    <div class="form-text small text-danger"><i class="fas fa-exclamation-circle me-1"></i> Dato crítico para alertas.</div>
+                                </div>
+                            </div>
+
+                            <hr class="text-muted opacity-25 my-4">
+
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Unidades en el Lote</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fas fa-hashtag text-muted"></i></span>
+                                        <input type="number" name="lote_unidades" class="form-control" min="1" value="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Coste Total del Lote</label>
+                                    <div class="input-group">
+                                        <input type="number" name="coste" class="form-control" step="0.01" value="0.00" required>
+                                        <span class="input-group-text">€</span>
+                                    </div>
+                                    <div class="form-text small">Coste total de compra (Poner 0 si es donación).</div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-lg text-white shadow-sm" style="background-color: var(--secondary-color);">
+                                    <i class="fas fa-save me-2"></i> Guardar Lote
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
     {% else %}
-      <p style="color: red">Producto no encontrado.</p>
-      <div class="back-link">
-        <a href="{{ url_for('inventario') }}">Volver al inventario</a>
-      </div>
+        <div class="text-center py-5">
+            <h3 class="text-danger">Producto no encontrado</h3>
+            <p class="text-muted">No se puede crear un lote porque el producto base no existe.</p>
+            <a href="{{ url_for('inventario') }}" class="btn btn-secondary">Volver al Inventario</a>
+        </div>
     {% endif %}
 
-  </body>
-</html>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fechaEntrada = document.getElementById('fecha_entrada');
+        if (fechaEntrada && !fechaEntrada.value) {
+            fechaEntrada.valueAsDate = new Date();
+        }
+    });
+</script>
+
+{% endblock %}

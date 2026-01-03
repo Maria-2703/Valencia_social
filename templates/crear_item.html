@@ -1,94 +1,176 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crear producto</title>
-    <style>body{font-family:Arial,Helvetica,sans-serif;padding:16px}label{display:block;margin-top:8px}</style>
-  </head>
-  <body>
-    <h1>Nuevo producto</h1>
+{% extends "base.html" %}
 
-    <!-- Form 1: elige categoría y recarga con GET -->
-    <form method="GET" action="{{ url_for('crear_producto') }}">
-      <label>Categoría</label>
-      <select name="category" required>
-        <option value="">-- Selecciona --</option>
-        {% for cat in categories %}
-          <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>{{ cat }}</option>
-        {% endfor %}
-      </select>
+{% block content %}
 
-      <button type="submit">Cargar variantes</button>
-    </form>
+<div class="container py-4">
 
-    <hr>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-serif fw-bold mb-0" style="color: var(--secondary-color);">Nuevo Producto</h2>
+            <p class="text-muted mb-0">Registra un nuevo tipo de alimento en el sistema.</p>
+        </div>
+        <a href="{{ url_for('inventario', codigo=selected_codigo) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver al Inventario
+        </a>
+    </div>
 
-    <!-- Form 2: crea producto (POST) ya con variantes cargadas -->
-    <form method="POST" action="{{ url_for('crear_producto') }}">
-      <!-- Persistimos categoría -->
-      <input type="hidden" name="category" value="{{ selected_category }}">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
 
-      <label>Selecciona Código postal / Municipio</label>
-      <select name="codigo_municipio" required>
-        <option value="">-- Selecciona --</option>
-        {% for m in municipios %}
-          <option value="{{ m.code }}" {% if m.code == selected_codigo %}selected{% endif %}>{{ m.name }} ({{ m.code }})</option>
-        {% endfor %}
-      </select>
+            {% if error_message %}
+                <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <div>{{ error_message }}</div>
+                </div>
+            {% endif %}
 
-      {% if error_message %}
-        <p style="color:red">{{ error_message }}</p>
-      {% endif %}
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; border-left: 5px solid var(--primary-color);">
+                <div class="card-body p-4">
+                    <form method="GET" action="{{ url_for('crear_producto') }}">
+                        <input type="hidden" name="codigo" value="{{ selected_codigo }}">
+                        
+                        <label for="category_select" class="form-label fw-bold text-secondary text-uppercase small">1. Clasificación del Producto</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-tags text-muted"></i></span>
+                            <select name="category" id="category_select" class="form-select form-select-lg" required onchange="this.form.submit()">
+                                <option value="">-- Selecciona la Categoría Principal --</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Selecciona la categoría para cargar las variantes disponibles.</div>
+                    </form>
+                </div>
+            </div>
 
-      <label>Producto (nombre)</label>
-      <input name="item_name" value="" required>
+            <form method="POST" action="{{ url_for('crear_producto') }}" class="{% if not selected_category %}opacity-50 pe-none{% endif %}">
+                
+                <input type="hidden" name="category" value="{{ selected_category }}">
+                <div class="row g-4">
+                    
+                    <div class="col-md-12">
+                        <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-info-circle me-2"></i>Datos Generales</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small">Ubicación (Centro)</label>
+                                        <select name="codigo_municipio" class="form-select" required>
+                                            <option value="">-- Selecciona Municipio --</option>
+                                            {% for m in municipios %}
+                                                <option value="{{ m.code }}" {% if m.code == selected_codigo %}selected{% endif %}>
+                                                    {{ m.name }} ({{ m.code }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
 
-      <label>Variante</label>
-      <select name="variante">
-        <option value="">-- (Opcional) --</option>
-        {% for v in type_category %}
-          <option value="{{ v }}">{{ v }}</option>
-        {% endfor %}
-      </select>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small">Nombre del Producto</label>
+                                        <input type="text" name="item_name" class="form-control" placeholder="Ej. Tomate Frito, Leche..." required>
+                                    </div>
 
-      <h3>Formato</h3>
-      <label>Multipack</label>
-      <input name="multipack" type="number" min="1" value="1" required>
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold small">Variante / Subtipo</label>
+                                        <select name="variante" class="form-select bg-light">
+                                            <option value="">-- Selecciona Variante (Opcional) --</option>
+                                            {% for v in type_category %}
+                                                <option value="{{ v }}">{{ v|capitalize }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if not selected_category %}
+                                            <div class="form-text text-danger small">Selecciona una categoría arriba para ver las variantes.</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-      <label>Cantidad por unidad (ej. 80)</label>
-      <input name="formato_cantidad" type="number" step="any" value="0" required>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-ruler-combined me-2"></i>Formato</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold small">Multipack</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">x</span>
+                                            <input type="number" name="multipack" class="form-control" min="1" value="1" required>
+                                        </div>
+                                        <div class="form-text small">Packs (ej. 6 en pack de leche)</div>
+                                    </div>
 
-      <label>Tipo</label>
-      <select name="unit" required>
-        <option value="">-- Selecciona --</option>
-        {% for u in units %}
-          <option value="{{ u }}" {% if u == selected_unit %}selected{% endif %}>{{ u }}</option>
-        {% endfor %}
-      </select>
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold small">Medida</label>
+                                        <div class="input-group">
+                                            <input type="number" name="formato_cantidad" class="form-control" step="any" placeholder="0" required>
+                                            <select name="formato_unidad" class="form-select" style="max-width: 80px;" required>
+                                                {% for u in units %}
+                                                    <option value="{{ u }}" {% if u == selected_unit %}selected{% endif %}>{{ u }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-text small">Ej: 1 L, 500 g</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-      <h3>Datos de lote</h3>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-box me-2"></i>Lote Inicial (Stock)</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold small">Unidades</label>
+                                        <input type="number" name="lote_unidades" class="form-control" min="0" value="0">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold small">Coste Total</label>
+                                        <div class="input-group">
+                                            <input type="number" name="coste" class="form-control" step="0.01" value="0.00">
+                                            <span class="input-group-text">€</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold small">Entrada</label>
+                                        <input type="date" name="fecha_entrada" class="form-control">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold small">Caducidad</label>
+                                        <input type="date" name="fecha_caducidad" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-      <label>Fecha entrada (YYYY-MM-DD)</label>
-      <input name="fecha_entrada" type="date" value="">
+                </div> <div class="mt-4 text-end">
+                    {% if not selected_category %}
+                        <p class="text-danger small mb-2"><i class="fas fa-lock"></i> Selecciona una categoría primero para habilitar el guardado.</p>
+                        <button type="button" class="btn btn-secondary btn-lg disabled" disabled>Guardar Producto</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-lg text-white shadow-sm" style="background-color: var(--secondary-color); padding: 10px 40px;">
+                            <i class="fas fa-save me-2"></i> Guardar Producto
+                        </button>
+                    {% endif %}
+                </div>
 
-      <label>Fecha caducidad (YYYY-MM-DD)</label>
-      <input name="fecha_caducidad" type="date" value="">
+            </form>
+        </div>
+    </div>
+</div>
 
-      <label>Unidades en lote</label>
-      <input name="lote_unidades" type="number" min="0" value="0">
-
-      <label>Coste del lote</label>
-      <input name="coste" type="number" step="0.01" value="0.00">
-
-      <div style="margin-top:12px">
-        <button type="submit" {% if not selected_category %}disabled{% endif %}>Guardar producto</button>
-      </div>
-
-      {% if not selected_category %}
-        <p style="margin-top:8px;color:#555">Primero selecciona una categoría y carga variantes.</p>
-      {% endif %}
-    </form>
-
-  </body>
-</html>
+{% endblock %}

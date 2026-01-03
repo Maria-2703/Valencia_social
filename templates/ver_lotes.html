@@ -1,63 +1,178 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ver lotes</title>
-    <style>
-      body{font-family:Arial,Helvetica,sans-serif;padding:16px}
-      table{border-collapse:collapse;width:100%;margin-top:12px}
-      th,td{border:1px solid #ddd;padding:8px;text-align:left}
-      .meta{margin-top:8px}
-      a.button{display:inline-block;margin-right:8px;padding:6px 10px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px}
-    </style>
-  </head>
-  <body>
-    <h1>Lotes del producto</h1>
+{% extends "base.html" %}
 
-    {% if item %}
-      <p><strong>Nombre:</strong> {{ item.nombre or item.producto }}</p>
-      <p class="meta"><strong>Categoría:</strong> {{ item.categoria or '-' }} &nbsp; | &nbsp; <strong>Variante:</strong> {{ item.variante or '-' }} &nbsp; | &nbsp; <strong>Stock total:</strong> {{ item.stock_total or 0 }}</p>
+{% block content %}
 
-      <div style="margin-top:12px">
-        <a class="button" href="{{ url_for('crear_lote', item_id=item._id|string) }}">Crear lote</a>
-        <a class="button" href="{{ url_for('editar_lote', item_id=item._id|string) }}">Editar lotes</a>
-        <a style="margin-left:8px;" href="{{ url_for('inventario') }}">Volver al inventario</a>
-      </div>
+<style>
+    /* Aseguramos que el botón de crear se vea azul oscuro */
+    .btn-crear {
+        background-color: #1f4e5f !important; /* Azul oscuro */
+        color: white !important;
+        border: none;
+    }
+    .btn-crear:hover {
+        background-color: #143642 !important;
+    }
+    
+    .icon-circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: #6c757d;
+    }
+    
+    .icon-circle.text-danger {
+        color: #ff3b30;
+    }
+    
+    .icon-circle.text-success {
+        color: #28a745;
+    }
+    
+    .icon-circle.text-warning {
+        color: #e2a03f;
+    }
 
-      <h2 style="margin-top:18px">Listado de lotes ({{ lotes|length }})</h2>
+    /* Ajustes para compactar la vista */
+    .compact-card { padding: 10px 15px; }
+    h2 { font-size: 1.5rem; }
+    .badge { font-size: 0.8rem; }
+    
+    .caducidad-color {
+        color: #1f4e5f;
+    }
+</style>
 
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Lote ID</th>
-            <th>Fecha entrada</th>
-            <th>Fecha caducidad</th>
-            <th>Unidades</th>
-            <th>Coste</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for lote in lotes %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ lote.lote_id or '-' }}</td>
-              <td>{% if lote.fecha_entrada %}{{ lote.fecha_entrada.strftime('%Y-%m-%d') }}{% else %}-{% endif %}</td>
-              <td>{% if lote.fecha_caducidad %}{{ lote.fecha_caducidad.strftime('%Y-%m-%d') }}{% else %}-{% endif %}</td>
-              <td>{{ lote.unidades or 0 }}</td>
-              <td>{{ lote.coste or 0.0 }}</td>
-            </tr>
-          {% else %}
-            <tr><td colspan="6">No hay lotes</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<div class="container py-3"> {% if item %}
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('inventario', codigo=item.Codigo_municipio) }}" class="text-decoration-none text-muted fs-5" title="Volver">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="text-serif fw-bold mb-0" style="color: #1f4e5f;">{{ item.nombre or item.producto }}</h2>
+                    <span class="badge rounded-pill bg-light text-dark border">{{ item.categoria or 'General' }}</span>
+                </div>
+                <div class="text-muted small">
+                    Variante: <strong>{{ item.variante or '-' }}</strong> | 
+                    Formato: {{ item.formato.multipack }}x {{ item.formato.cantidad }}{{ item.formato.unidad }}
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <a href="{{ url_for('crear_lote', item_id=item._id|string) }}" class="btn btn-sm btn-crear shadow-sm me-2">
+                <i class="fas fa-plus me-1"></i> Crear Lote
+            </a>
+            <a href="{{ url_for('editar_lote', item_id=item._id|string) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-edit me-1"></i> Editar Lotes
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px; background: #fff;">
+        <div class="card-body py-2"> <div class="row text-center align-items-center">
+                
+                <div class="col-4 border-end">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <div class="icon-circle bg-light text-secondary"><i class="fas fa-boxes"></i></div>
+                        <div class="text-start">
+                            <h4 class="mb-0 fw-bold text-dark">{{ item.stock_total or 0 }}</h4>
+                            <small class="text-muted" style="font-size: 0.7rem;">STOCK</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-4 border-end">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <div class="icon-circle bg-light {% if item.proxima_caducidad %}text-danger{% else %}text-success{% endif %}">
+                            <i class="far fa-calendar-alt"></i>
+                        </div>
+                        <div class="text-start">
+                            <h4 class="mb-0 fw-bold caducidad-color">
+                                {% if item.proxima_caducidad %}
+                                    {{ item.proxima_caducidad.strftime('%d/%m/%Y') if item.proxima_caducidad.strftime is defined else item.proxima_caducidad }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted" style="font-size: 0.7rem;">CADUCIDAD</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-4">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <div class="icon-circle bg-light text-warning"><i class="fas fa-euro-sign"></i></div>
+                        <div class="text-start">
+                            <h4 class="mb-0 fw-bold text-dark">{{ "%.2f"|format(item.coste_total or 0) }}€</h4>
+                            <small class="text-muted" style="font-size: 0.7rem;">TOTAL</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+        <div class="card-header bg-white border-bottom py-2">
+            <h6 class="mb-0 fw-bold text-secondary small"><i class="fas fa-list me-2"></i>Lotes ({{ lotes|length }})</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0" style="font-size: 0.9rem;">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        <th class="ps-3 py-2 text-muted">ID Lote</th>
+                        <th class="py-2 text-muted">Entrada</th>
+                        <th class="py-2 text-muted">Caducidad</th>
+                        <th class="py-2 text-muted text-center">Uds.</th>
+                        <th class="py-2 text-muted text-end pe-3">Coste</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lote in lotes %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark font-monospace">{{ lote.lote_id or '-' }}</td>
+                            <td>
+                                {% if lote.fecha_entrada %}
+                                    {{ lote.fecha_entrada.strftime('%d/%m/%Y') if lote.fecha_entrada.strftime is defined else lote.fecha_entrada }}
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if lote.fecha_caducidad %}
+                                    <span class="{% if lote.fecha_caducidad == item.proxima_caducidad %}text-danger fw-bold{% endif %}">
+                                        {{ lote.fecha_caducidad.strftime('%d/%m/%Y') if lote.fecha_caducidad.strftime is defined else lote.fecha_caducidad }}
+                                    </span>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td class="text-center fw-bold text-secondary">{{ lote.unidades or 0 }}</td>
+                            <td class="text-end pe-3 text-muted">{{ "%.2f"|format(lote.coste or 0) }}€</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3 text-muted">
+                                No hay lotes registrados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     {% else %}
-      <p style="color:red">Producto no encontrado.</p>
-      <p><a href="{{ url_for('inventario') }}">Volver al inventario</a></p>
+        <div class="text-center py-5">
+            <h3 class="text-danger">Producto no encontrado</h3>
+            <a href="{{ url_for('inventario') }}" class="btn btn-secondary mt-2">Volver</a>
+        </div>
     {% endif %}
 
-  </body>
-</html>
+</div>
+
+{% endblock %}
