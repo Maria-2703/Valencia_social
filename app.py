@@ -12,6 +12,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from bson.objectid import ObjectId
 import random
+import textwrap
 import onnxruntime as ort
 import numpy as np
 
@@ -750,11 +751,22 @@ def predict_demand(codigo_postal, temperatura):
     return label_int, prediction_str, None
 
 # función que crea un menú del día usando Cohere
-def ai_chef(inventario, donaciones, demanda):
+def ai_chef(inventario, demanda):
+    # límite de productos a enviar a la IA para que no se sature
+    max_items_inventario = 40
+    
+    if len(inventario) > max_items_inventario:
+        # ordenación por fecha si existe el campo
+        try:
+            # se guardan los que caducan antes
+            inventario_filtrado = sorted(inventario, key=lambda x: x.get('fecha_caducidad', '9999-99-99'))[:max_items_inventario]
+        except:
+            inventario_filtrado = inventario[:max_items_inventario]
+    else:
+        inventario_filtrado = inventario
 
     # conversión de los diccionarios a string
-    inventario_texto = json.dumps(inventario, indent=2, ensure_ascii=False, default=str)
-    donaciones_texto = json.dumps(donaciones, indent=2, ensure_ascii=False)
+    inventario_texto = json.dumps(inventario_filtrado, indent=2, ensure_ascii=False, default=str)
 
     # prompt detallado para instruir a la IA
     prompt = f"""Actúa como un Chef Ejecutivo y experto en logística de alimentos para un comedor 
@@ -763,8 +775,7 @@ def ai_chef(inventario, donaciones, demanda):
 
     Te voy a proporcionar tres datos:
     1. INVENTARIO: Alimentos que ya tenemos almacenados (secos, latas, congelados).
-    2. DONACIONES DEL DÍA: Alimentos frescos o perecederos que acaban de llegar.
-    3. DEMANDA: la demanda que se espera que haya en el comedor (demanda muy baja, baja, normal, alta o crítica).
+    2. DEMANDA: la demanda que se espera que haya en el comedor (demanda muy baja, baja, normal, alta o crítica).
 
     Tus instrucciones son:
     - PRIORIDAD 1: Usa primero los productos cerca de vencer.
@@ -777,9 +788,6 @@ def ai_chef(inventario, donaciones, demanda):
     
     [INVENTARIO]
     {inventario_texto}
-
-    [DONACIONES DEL DÍA]
-    {donaciones_texto}
 
     [DEMANDA]
     {demanda}
@@ -805,7 +813,7 @@ def ai_chef(inventario, donaciones, demanda):
     try: 
         # envío del prompt a la ia y guardado de su respuesta
         response = co.chat(
-            model="command-r-plus-08-2024",
+            model="command-r-08-2024",
             messages=[
                 {
                     "role": "user",
@@ -823,8 +831,31 @@ def ai_chef(inventario, donaciones, demanda):
 
     except Exception as e:
         
-        print(f"Error generando el menú: {e}")
-        return f"<h3>Ocurrió un error al generar el menú:</h3><p>{str(e)}</p>"
+        print(f"IA saturada, menú de respaldo generado.")
+
+        texto_respaldo = f"""
+        ### 🍽️ MENÚ DEL DÍA (MODO RESPALDO)
+        * **Primer Plato:** Crema de verduras de temporada
+        * **Segundo Plato:** Guiso de legumbres con arroz y hortalizas
+        * **Postre:** Fruta variada del tiempo
+        * **Acompañamiento:** Pan integral y agua
+
+        ### ⚠️ NOTA DEL SISTEMA
+        La Inteligencia Artificial no está disponible momentáneamente. Se muestra un menú estándar equilibrado para asegurar el servicio.
+
+        ### 📝 LISTA DE PRODUCCIÓN ESTIMADA
+        | Ingrediente | Origen | Cantidad pax | TOTAL A USAR |
+        |---|---|---|---|
+        | Lentejas Pardinas | Inventario | 80 gr | 8 Kg |
+        | Arroz Redondo | Inventario | 30 gr | 3 Kg |
+        | Verduras Varias | Donación | 150 gr | 15 Kg |
+        | Patatas | Inventario | 100 gr | 10 Kg |
+        | Cebolla y Ajo | Donación | 20 gr | 2 Kg |
+        | Pan | Donación | 1 ud | 100 uds |
+        """
+        
+        # .strip() elimina la primera línea en blanco si la hubiera
+        return textwrap.dedent(texto_respaldo).strip()
     
 # función que genera una campaña publicitaria con Cohere
 def ai_campaign(inventario):
@@ -950,6 +981,11 @@ def inject_alerts():
 # ruta principal
 @app.route('/')
 def index():
+
+    # búsqueda del menú de hoy
+    hoy = date.today().strftime('%Y-%m-%d')
+    menu_hoy = db['Menus'].find_one({'fecha': hoy})
+
     # conteo de alertas para las notificaciones
     collection_alert = db['Alertas']
     total_alertas = collection_alert.count_documents({})
@@ -974,7 +1010,7 @@ def index():
     process_donation(record)
     generar_alerta()
 
-    return render_template('index.html', total_alertas=total_alertas)
+    return render_template('index.html', total_alertas=total_alertas, menu_hoy=menu_hoy)
 
 # ruta para las donaciones
 @app.route('/donacion', methods=['GET'])
@@ -1876,7 +1912,7 @@ def chef():
 
     # para método GET devolvemos el html vacío
     if request.method == 'GET':
-        return render_template('chef.html', inventario=None, donaciones=None, demanda=None, menu=menu)
+        return render_template('chef.html', menu=menu)
     
     # obtención del cp
     codigo = request.form.get("codigo_postal")
@@ -1886,7 +1922,7 @@ def chef():
     
     # obtención del inventario/donaciones/demanda para el cp
     inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
-    donaciones = list(db['Donaciones'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
+    
     # usar la última predicción de la demanda
     prediccion = db['Predicciones'].find_one(
                 {"Codigo_municipio": int(codigo)}, 
@@ -1897,9 +1933,39 @@ def chef():
     else:
         demanda = 'Normal'
 
-    menu = ai_chef(inventario, donaciones, demanda)
+    menu = ai_chef(inventario, demanda)
 
     return render_template("chef.html", menu=menu)
+
+
+# ruta para guardar el menú generado
+@app.route('/guardar_menu', methods=['POST'])
+def guardar_menu():
+    menu = request.form.get('menu')
+    plato_principal = request.form.get('plato_principal')
+    cp = request.form.get('codigo_postal')
+
+    if not menu or not cp:
+        return redirect(url_for('chef'))
+    
+    hoy = date.today().strftime('%Y-%m-%d')
+
+    # menú a insertar
+    doc = {
+        'fecha': hoy,
+        'plato_principal': plato_principal,
+        'codigo_postal': cp,
+        'contenido': menu
+    }
+
+    # actualización en mongo
+    db.Menus.update_one(
+        {'fecha': hoy, "codigo_postal": cp},
+        {'$set': doc},
+        upsert=True
+    )
+
+    return redirect(url_for('index'))
 
 # ruta para generar el anuncio
 @app.route('/anuncio', methods=['GET', 'POST'])
