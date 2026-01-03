@@ -934,6 +934,19 @@ def connect_db():
         
         db = get_db()
 
+# para que 'total_alertas' esté disponible en todos los html sin que haya que escribirlo en cada ruta
+@app.context_processor
+def inject_alerts():
+    # 0 si la base de datos es None
+    if db is None:
+        return {'total_alertas': 0}
+    
+    try:
+        count = db['Alertas'].count_documents({})
+        return {'total_alertas': count}
+    except Exception:
+        return {'total_alertas': 0}
+
 # ruta principal
 @app.route('/')
 def index():
@@ -1849,6 +1862,11 @@ def stats_predicciones():
     pred_paro_muni = list(db["Predicciones"].aggregate(pipeline_pred_paro))
 
     return render_template("stats_predicciones.html", pred_por_cp=pred_por_cp, pred_por_tipo=pred_por_tipo, pred_renta_demanda=pred_renta_demanda, pred_hab_muni=pred_hab_muni, pred_renta_muni=pred_renta_muni, pred_paro_muni=pred_paro_muni)
+
+# ruta para la generación de menú y anuncio
+@app.route('/generar')
+def generar():
+    return render_template('generar.html')
 
 # ruta para generar menú
 @app.route('/chef', methods = ["GET", "POST"])
