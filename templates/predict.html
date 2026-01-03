@@ -1,158 +1,208 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predicción de Demanda - Comedor Social</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 500px;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 24px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #666;
-            font-weight: bold;
-        }
-        input[type="text"],
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box; /* Para que el padding no rompa el ancho */
-            font-size: 16px;
-        }
-        input:focus {
-            border-color: #4CAF50;
-            outline: none;
-        }
-        button {
-            width: 100%;
-            background-color: #4CAF50;
-            color: white;
-            padding: 14px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        
-        /* Estilos para Mensajes de Alerta y Resultados */
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .result-box {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-            padding: 20px;
-            border-radius: 5px;
-            margin-top: 25px;
-            text-align: center;
-        }
-        .result-details {
-            font-size: 0.9em;
-            color: #555;
-            margin-top: 10px;
-            border-top: 1px solid #c8e6c9;
-            padding-top: 10px;
-        }
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #4CAF50;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="container">
-        <h1>🍽️ Predicción Demanda</h1>
+{% block content %}
 
-        {% if error %}
-            <div class="alert alert-error">
-                <strong>⚠️ Error:</strong> {{ error }}
-            </div>
-        {% endif %}
+<style>
+    /* Estilos específicos para la sección de Predicción */
+    .predict-hero {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); /* Azul suave tecnológico */
+        padding: 40px 0;
+        border-bottom: 1px solid #bbdefb;
+        margin-bottom: 30px;
+    }
 
-        {% if prediction %}
-            <div class="result-box">
-                <h2>Resultado de la IA</h2>
-                <p style="font-size: 1.2em; font-weight: bold;">{{ prediction.split('.')[0] }}</p>
-                
-                <div class="result-details">
-                    <p>Datos registrados:</p>
-                    <ul style="list-style: none; padding: 0;">
-                        <li>📍 Municipio: <strong>{{ features.municipio }}</strong></li>
-                        <li>📮 CP: <strong>{{ features.codigo_postal }}</strong></li>
-                        <li>🌡️ Temp: <strong>{{ features.temperatura }}ºC</strong></li>
-                    </ul>
-                    <small>✅ Datos guardados en MongoDB</small>
-                </div>
-            </div>
-            
-            <a href="/predict" class="back-link">← Realizar otra predicción</a>
+    .predict-card {
+        border: 0;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
 
-        {% else %}
-            <form action="/predict" method="POST">
-                <div class="form-group">
-                    <label for="municipio">Municipio:</label>
-                    <input type="text" id="municipio" name="municipio" placeholder="Ej: Valencia" required>
-                </div>
+    /* Estilos de inputs */
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-right: 0;
+        color: var(--secondary-color);
+    }
+    
+    .form-control {
+        border-left: 0;
+        padding: 12px;
+    }
+    
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #ced4da;
+        background-color: #fff;
+    }
+    
+    .input-group:focus-within .input-group-text {
+        border-color: var(--secondary-color);
+        background-color: #fff;
+    }
+    
+    .input-group:focus-within .form-control {
+        border-color: var(--secondary-color);
+    }
 
-                <div class="form-group">
-                    <label for="codigo_postal">Código Postal:</label>
-                    <input type="text" id="codigo_postal" name="codigo_postal" placeholder="Ej: 46001" required>
-                </div>
+    /* Tarjeta de Resultados */
+    .result-display {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, #143642 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
 
-                <div class="form-group">
-                    <label for="temperatura">Temperatura (ºC):</label>
-                    <input type="number" id="temperatura" name="temperatura" step="0.1" placeholder="Ej: 18.5" required>
-                </div>
+    /* Efecto de fondo gráfico sutil */
+    .result-display::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        pointer-events: none;
+    }
 
-                <button type="submit">Calcular Demanda</button>
-            </form>
-        {% endif %}
+    .prediction-number {
+        font-size: 3.5rem;
+        font-weight: 800;
+        font-family: 'Playfair Display', serif;
+        margin: 10px 0;
+    }
 
+    .data-summary-card {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid #eee;
+    }
+
+</style>
+
+<div class="predict-hero">
+    <div class="container text-center">
+        <span class="badge rounded-pill bg-white text-primary shadow-sm px-3 py-2 mb-3 border">
+            <i class="fas fa-chart-line me-1"></i> Análisis Predictivo
+        </span>
+        <h1 class="display-5 fw-bold" style="font-family: 'Playfair Display', serif; color: var(--secondary-color);">
+            Predicción de Afluencia
+        </h1>
+        <p class="lead text-muted mx-auto" style="max-width: 600px;">
+            Anticípate a la demanda. Nuestra IA analiza variables climáticas y demográficas para estimar los recursos necesarios.
+        </p>
     </div>
+</div>
 
-</body>
-</html>
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+
+            {% if error %}
+                <div class="alert alert-danger shadow-sm border-0 rounded-3 d-flex align-items-center mb-4">
+                    <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
+                    <div>
+                        <strong>Error en el cálculo:</strong> {{ error }}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if prediction %}
+                <div class="card predict-card animate__animated animate__fadeIn">
+                    <div class="card-body p-4">
+                        
+                        <div class="result-display shadow-sm">
+                            <h6 class="text-uppercase text-white-50 mb-0" style="letter-spacing: 2px;">Demanda Estimada</h6>
+                            <div class="prediction-number">
+                                {{ prediction.split('.')[0] }}
+                            </div>
+                            <div class="badge bg-white text-dark px-3 py-2 rounded-pill mt-2">
+                                <i class="fas fa-check-circle text-success me-1"></i> Cálculo completado
+                            </div>
+                        </div>
+
+                        <div class="data-summary-card mb-4">
+                            <h6 class="fw-bold text-secondary mb-3"><i class="fas fa-sliders-h me-2"></i>Parámetros utilizados:</h6>
+                            <div class="row g-3">
+                                <div class="col-4 text-center border-end">
+                                    <div class="text-muted small">Municipio</div>
+                                    <div class="fw-bold">{{ features.municipio }}</div>
+                                </div>
+                                <div class="col-4 text-center border-end">
+                                    <div class="text-muted small">C. Postal</div>
+                                    <div class="fw-bold">{{ features.codigo_postal }}</div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="text-muted small">Temperatura</div>
+                                    <div class="fw-bold text-danger">{{ features.temperatura }}ºC</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <a href="/predict" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-sync-alt me-2"></i> Realizar nueva predicción
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+
+                <div class="card predict-card">
+                    <div class="card-header bg-white border-bottom py-3 text-center">
+                        <h5 class="mb-0 fw-bold text-secondary">Introduce los variables</h5>
+                    </div>
+                    <div class="card-body p-4 p-lg-5">
+                        <form action="/predict" method="POST">
+                            
+                            <div class="mb-4">
+                                <label for="municipio" class="form-label fw-bold text-secondary small text-uppercase">Municipio</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text"><i class="fas fa-city"></i></span>
+                                    <input type="text" id="municipio" name="municipio" class="form-control" placeholder="Ej: Valencia" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="codigo_postal" class="form-label fw-bold text-secondary small text-uppercase">Código Postal</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text"><i class="fas fa-map-marked-alt"></i></span>
+                                    <input type="text" id="codigo_postal" name="codigo_postal" class="form-control" placeholder="Ej: 46001" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-5">
+                                <label for="temperatura" class="form-label fw-bold text-secondary small text-uppercase">Temperatura Prevista (ºC)</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text"><i class="fas fa-thermometer-half text-danger"></i></span>
+                                    <input type="number" id="temperatura" name="temperatura" step="0.1" class="form-control" placeholder="Ej: 18.5" required>
+                                </div>
+                                <div class="form-text mt-2">
+                                    <i class="fas fa-info-circle me-1"></i> La temperatura influye en el tipo de menú y la afluencia.
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-lg text-white shadow-sm fw-bold" 
+                                        style="background-color: var(--secondary-color); padding: 15px;">
+                                    <i class="fas fa-calculator me-2"></i> Calcular Demanda
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

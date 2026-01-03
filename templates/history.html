@@ -1,150 +1,112 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico de Predicciones - Comedor Social</title>
+{% extends "base.html" %}
 
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 40px 20px;
-        }
+{% block content %}
 
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 1000px;
-            overflow-x: auto;
-        }
-
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 26px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            padding: 12px 10px;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-            font-size: 14px;
-        }
-
-        th {
-            background-color: #4CAF50;
-            color: white;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        .badge {
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 12px;
-            color: white;
-            display: inline-block;
-            min-width: 90px;
-        }
-
-        /* Estados de Demanda */
-        .Muy-baja { background-color: #9e9e9e; }
-        .Baja { background-color: #03a9f4; }
-        .Normal { background-color: #4CAF50; }
-        .Alta { background-color: #ff9800; }
-        .Crítica { background-color: #f44336; }
-        .null-data { background-color: #607d8b; }
-
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 25px;
-            color: #4CAF50;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .empty {
-            text-align: center;
-            color: #777;
-            padding: 40px;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="container">
-    <h1>📜 Histórico de Predicciones</h1>
-
-    {% if records %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Municipio</th>
-                    <th>CP</th>
-                    <th>Temp</th>
-                    <th>Habitantes</th>
-                    <th>Renta Media</th>
-                    <th>Paro Total</th>
-                    <th>Demanda</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in records %}
-                    <tr>
-                        <td><strong>{{ p.municipio or 'Desconocido' }}</strong></td>
-                        <td>{{ p.codigo_postal }}</td>
-                        <td>{{ p.temperatura }}°C</td>
-                        
-                        {# Formateo de números para que sean legibles #}
-                        <td>{{ "{:,}".format(p.habitantes|int) if p.habitantes else '0' }}</td>
-                        <td>{{ "{:,.2f}".format(p.renta_media|float) if p.renta_media else '0.00' }}€</td>
-                        <td>{{ p.paro_registrado or '0' }}</td>
-                        
-                        <td>
-                            {% if p.demanda %}
-                                <span class="badge {{ p.demanda.replace(' ', '-') }}">
-                                    {{ p.demanda }}
-                                </span>
-                            {% else %}
-                                <span class="badge null-data">Sin Datos</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="empty">
-            No se encontraron registros en la base de datos.
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-serif fw-bold mb-0" style="color: var(--secondary-color);">Historial de Predicciones</h2>
+            <p class="text-muted mb-0">Registro completo de las consultas realizadas a la IA.</p>
         </div>
-    {% endif %}
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-print me-2"></i> Imprimir
+            </button>
+            
+            <a href="/stats/predicciones" class="btn btn-sm text-white shadow-sm" style="background-color: var(--secondary-color); border-color: var(--secondary-color);">
+                <i class="fas fa-chart-pie me-2"></i> Ver Gráficas
+            </a>
+        </div>
+    </div>
 
-    <a href="/predict" class="back-link">← Volver a predicción</a>
+    <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+        <div class="card-body p-0">
+            
+            {% if records %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-3 text-secondary text-uppercase small">Municipio / CP</th>
+                                <th class="py-3 text-secondary text-uppercase small"><i class="fas fa-thermometer-half me-1"></i> Clima</th>
+                                <th class="py-3 text-secondary text-uppercase small text-end"><i class="fas fa-users me-1"></i> Hab.</th>
+                                <th class="py-3 text-secondary text-uppercase small text-end"><i class="fas fa-euro-sign me-1"></i> Renta</th>
+                                <th class="py-3 text-secondary text-uppercase small text-end"><i class="fas fa-briefcase me-1"></i> Paro</th>
+                                <th class="pe-4 py-3 text-secondary text-uppercase small text-center">Previsión</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in records %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">{{ p.municipio or 'Desconocido' }}</div>
+                                        <div class="small text-muted"><i class="fas fa-map-marker-alt me-1 text-secondary"></i> {{ p.codigo_postal }}</div>
+                                    </td>
+                                    
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            {{ p.temperatura }}°C
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end text-muted font-monospace">
+                                        {{ "{:,}".format(p.habitantes|int).replace(',', '.') if p.habitantes else '0' }}
+                                    </td>
+                                    <td class="text-end text-muted font-monospace">
+                                        {{ "{:,.2f}".format(p.renta_media|float).replace(',', 'X').replace('.', ',').replace('X', '.') if p.renta_media else '0,00' }}€
+                                    </td>
+                                    <td class="text-end text-muted font-monospace">
+                                        {{ p.paro_registrado or '0' }}
+                                    </td>
+
+                                    <td class="pe-4 text-center">
+                                        {% if p.demanda %}
+                                            <span class="badge rounded-pill px-3 py-2 demanda-badge demanda-{{ p.demanda.split(' ')[0] }}">
+                                                {{ p.demanda }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary rounded-pill">Sin Datos</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-folder-open text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                    <h5 class="text-muted fw-bold">No hay registros</h5>
+                    <p class="text-muted small">Realiza una predicción para comenzar a llenar el historial.</p>
+                    <a href="/predict" class="btn btn-outline-primary btn-sm mt-2">Ir a Predecir</a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="/predict" class="text-decoration-none text-muted small">
+            <i class="fas fa-plus-circle me-1"></i> Realizar nueva predicción
+        </a>
+    </div>
+
 </div>
 
-</body>
-</html>
+<style>
+    .demanda-badge {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .demanda-Muy { background-color: #e9ecef; color: #495057; border: 1px solid #ced4da; }
+    .demanda-Baja { background-color: #e3f2fd; color: #0d47a1; border: 1px solid #90caf9; }
+    .demanda-Normal { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .demanda-Alta { background-color: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+    .demanda-Crítica, .demanda-Critica { background-color: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+</style>
+
+{% endblock %}

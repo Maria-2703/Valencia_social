@@ -1,208 +1,90 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Estadísticas Generales - Comedor Social</title>
+{% extends "base.html" %}
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block content %}
 
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 40px 20px;
-        }
+<div class="container py-5">
+    
+    <div class="text-center mb-5">
+        <h2 class="display-5 fw-bold text-serif" style="color: var(--secondary-color);">Centro de Inteligencia</h2>
+        <p class="lead text-muted mx-auto" style="max-width: 600px;">
+            Selecciona el área que deseas analizar en profundidad.
+        </p>
+    </div>
 
-        .container {
-            max-width: 1400px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
+    <div class="row g-4 justify-content-center">
 
-        h1 {
-            text-align: center;
-            margin-bottom: 40px;
-            color: #333;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 columnas en una fila */
-            gap: 30px;
-            align-items: start;
-        }
-
-        .stat-card {
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-card:hover {
-            transform: scale(1.03);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-
-        .card-tab {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 0;
-            text-align: center;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .card-content {
-            padding: 25px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h2.card-title {
-            color: #333;
-            font-size: 18px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        canvas {
-            width: 100% !important;
-            max-height: 400px;
-        }
-
-        .card-link {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 8px 14px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 13px;
-            transition: background 0.3s ease;
-        }
-
-        .card-link:hover {
-            background-color: #43a047;
-        }
-
-        @media (max-width: 1000px) {
-            .stats-grid {
-                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            }
-        }
-    </style>
-</head>
-
-<body>
-<div class="container">
-    <h1>📊 Estadísticas Generales</h1>
-
-    <div class="stats-grid">
-        <!-- DONACIONES -->
-        <div class="stat-card">
-            <div class="card-tab">Datos de Donaciones</div>
-            <div class="card-content">
-                <h2 class="card-title">Donaciones por Municipio</h2>
-                <canvas id="donacionesChart"></canvas>
-                <a href="/stats/donaciones" class="card-link">Ver más →</a>
-            </div>
+        <div class="col-lg-4 col-md-6">
+            <a href="/stats/donaciones" class="card h-100 border-0 shadow-sm text-decoration-none nav-stat-card card-donacion">
+                <div class="card-body p-5 text-center d-flex flex-column align-items-center justify-content-center">
+                    <div class="icon-box mb-4 text-success bg-success-subtle rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-hand-holding-heart fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-2">Donaciones</h3>
+                    <p class="text-muted small">Analiza el flujo de solidaridad, perfiles de donantes y evolución temporal.</p>
+                    <span class="btn btn-outline-success rounded-pill mt-3 px-4">Ver Informe</span>
+                </div>
+            </a>
         </div>
 
-        <!-- INVENTARIO -->
-        <div class="stat-card">
-            <div class="card-tab">Datos de Inventario</div>
-            <div class="card-content">
-                <h2 class="card-title">Stock actual por Producto</h2>
-                <canvas id="inventarioChart"></canvas>
-                <a href="/stats/inventario" class="card-link">Ver más →</a>
-            </div>
+        <div class="col-lg-4 col-md-6">
+            <a href="/stats/inventario" class="card h-100 border-0 shadow-sm text-decoration-none nav-stat-card card-inventario">
+                <div class="card-body p-5 text-center d-flex flex-column align-items-center justify-content-center">
+                    <div class="icon-box mb-4 text-warning bg-warning-subtle rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; color: #e2a03f !important; background-color: #fff3cd !important;">
+                        <i class="fas fa-boxes fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-2">Inventario</h3>
+                    <p class="text-muted small">Control de stock, valoración económica y gestión de caducidades.</p>
+                    <span class="btn btn-outline-warning rounded-pill mt-3 px-4" style="color: #e2a03f; border-color: #e2a03f;">Ver Informe</span>
+                </div>
+            </a>
         </div>
 
-        <!-- PREDICCIONES -->
-        <div class="stat-card">
-            <div class="card-tab">Datos de Predicciones</div>
-            <div class="card-content">
-                <h2 class="card-title">Predicciones por Código Postal</h2>
-                <canvas id="prediccionesChart"></canvas>
-                <a href="/stats/predicciones" class="card-link">Ver más →</a>
-            </div>
+        <div class="col-lg-4 col-md-6">
+            <a href="/stats/predicciones" class="card h-100 border-0 shadow-sm text-decoration-none nav-stat-card card-prediccion">
+                <div class="card-body p-5 text-center d-flex flex-column align-items-center justify-content-center">
+                    <div class="icon-box mb-4 text-primary bg-primary-subtle rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-2">Predicciones</h3>
+                    <p class="text-muted small">Inteligencia artificial aplicada a la previsión de demanda y afluencia.</p>
+                    <span class="btn btn-outline-primary rounded-pill mt-3 px-4">Ver Informe</span>
+                </div>
+            </a>
         </div>
+
     </div>
 </div>
 
-<script>
-    /* ================= DONACIONES ================= */
-    const donaciones = {{ don_por_muni | tojson }};
-    new Chart(document.getElementById("donacionesChart"), {
-        type: "bar",
-        data: {
-            labels: donaciones.map(d => d.municipio),
-            datasets: [{ 
-                label: "Unidades donadas", 
-                data: donaciones.map(d => d.total_unidades),
-                backgroundColor: '#A3E4D7'
-            }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-    });
+<style>
+    /* Estilos para las tarjetas de navegación */
+    .nav-stat-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        border-bottom: 5px solid transparent !important; /* Borde inferior invisible por defecto */
+    }
 
- /* ================= INVENTARIO (HORIZONTAL) ================= */
-    const inventario = {{ inv_por_prod | tojson }};
-    new Chart(document.getElementById("inventarioChart"), {
-        type: "bar",
-        data: {
-            labels: inventario.map(i => {
-                // extraer solo el nombre del producto eliminando categoría y cantidades
-                let nombre = i.nombre;
-                // eliminar todo antes del primer espacio si viene la categoría
-                if (nombre.includes(' ')) {
-                    const partes = nombre.split(' ');
-                    nombre = partes.slice(1).join(' ');
-                }
-                // eliminar cualquier texto entre paréntesis
-                nombre = nombre.replace(/\(.*\)/, '').trim();
-                return nombre;
-            }),
-            datasets: [{ 
-                label: "Stock total", 
-                data: inventario.map(i => i.stock_total),
-                backgroundColor: '#FFD1A3'
-            }]
-        },
-        options: { 
-            indexAxis: 'y', 
-            responsive: true, 
-            plugins: { legend: { display: false } }
-        }
-    });
+    .nav-stat-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+    }
 
+    /* Colores específicos al hacer hover */
+    .card-donacion:hover {
+        border-bottom-color: #28a745 !important;
+    }
+    .card-inventario:hover {
+        border-bottom-color: #e2a03f !important;
+    }
+    .card-prediccion:hover {
+        border-bottom-color: #0d6efd !important;
+    }
 
-    /* ================= PREDICCIONES ================= */
-    const predicciones = {{ pred_por_cp | tojson }};
-    new Chart(document.getElementById("prediccionesChart"), {
-        type: "bar",
-        data: {
-            labels: predicciones.map(p => p.codigo_postal),
-            datasets: [{ 
-                label: "Número de predicciones", 
-                data: predicciones.map(p => p.num_predicciones),
-                backgroundColor: '#C3A3FF'
-            }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-</script>
+    .icon-box {
+        transition: transform 0.3s ease;
+    }
+    
+    .nav-stat-card:hover .icon-box {
+        transform: scale(1.1);
+    }
+</style>
 
-</body>
-</html>
+{% endblock %}

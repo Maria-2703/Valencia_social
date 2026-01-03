@@ -1,64 +1,125 @@
-<!doctype html>
-<html lang="es">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Alertas - Comedor Social</title>
-		<style>
-			body{font-family:Arial,Helvetica,sans-serif;padding:20px}
-			.card{border:1px solid #e6e6e6;padding:12px;border-radius:6px;margin-bottom:12px}
-			.tipo-donacion{background:#e9f7ef;border-left:6px solid #28a745}
-			.tipo-stock{background:#fff7e6;border-left:6px solid #f0ad4e}
-			.tipo-caducidad{background:#fdecea;border-left:6px solid #d9534f}
-			.meta{color:#666;font-size:13px;margin-top:6px}
-			.titulo{font-weight:700}
-		</style>
-	</head>
-	<body>
-		<h1>Alertas</h1>
-		{% if not records %}
-			<p>No hay alertas.</p>
-		{% else %}
-			{% for r in records %}
-				{% set is_don = r.get('donacion_id') is not none %}
-				{% set is_stock = r.get('stock_total') is not none %}
-				{% set is_cad = r.get('proxima_caducidad') is not none %}
+{% extends "base.html" %}
 
-				<div class="card {% if is_don %}tipo-donacion{% elif is_stock %}tipo-stock{% elif is_cad %}tipo-caducidad{% endif %}">
-					<div style="display:flex; justify-content:space-between; align-items:center;">
-						<div class="titulo">
-						{% if is_don %}
-							Nueva donación: {{ r.get('producto') }}
-						{% elif is_stock %}
-							Stock bajo: {{ r.get('producto') }}
-						{% elif is_cad %}
-							Próxima caducidad: {{ r.get('producto') }}
-						{% else %}
-							Alerta: {{ r }}
-						{% endif %}
-						</div>
-						<div>
-							<form method="post" action="{{ url_for('delete_alert', alert_id=r.id) }}" onsubmit="return confirm('¿Eliminar esta alerta?');" style="display:inline">
-								<button type="submit" style="background:#d9534f;color:#fff;border:none;padding:6px 8px;border-radius:4px;cursor:pointer">Eliminar</button>
-							</form>
-						</div>
-					</div>
+{% block content %}
 
-					<div class="mensaje">
-						{% if is_don %}
-							Se ha registrado una nueva donación para <strong>{{ r.get('producto') }}</strong> — Lote <strong>{{ r.get('lote_id') }}</strong> con <strong>{{ r.get('unidades',0) }}</strong> unidades. Procesado: {{ r.get('procesado_en') or r.get('generado_en') }}.
-						{% elif is_stock %}
-							El producto <strong>{{ r.get('producto') }}</strong> tiene <strong>{{ r.get('stock_total',0) }}</strong> unidades, por debajo del mínimo de <strong>{{ r.get('minimo_alerta',0) }}</strong>. Por favor, reponer existencias.
-						{% elif is_cad %}
-							El producto <strong>{{ r.get('producto') }}</strong> tiene una próxima caducidad el <strong>{{ r.get('proxima_caducidad') }}</strong>. Revisar para evitar desperdicio.
-						{% else %}
-							Detalle: {{ r }}
-						{% endif %}
-					</div>
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="text-serif fw-bold mb-0" style="color: var(--secondary-color);">Centro de Notificaciones</h2>
+            <p class="text-muted mb-0">Historial de alertas, movimientos y avisos del sistema.</p>
+        </div>
+        
+        {% if records %}
+            <div class="bg-white px-4 py-2 rounded-pill shadow-sm border">
+                <span class="fw-bold text-secondary">{{ records|length }}</span> <span class="text-muted small">Notificaciones activas</span>
+            </div>
+        {% endif %}
+    </div>
 
-					<div class="meta">Generado: {{ r.get('generado_en') or r.get('procesado_en') }}</div>
-				</div>
-			{% endfor %}
-		{% endif %}
-	</body>
-</html>
+    {% if not records %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                </div>
+            </div>
+            <h3 class="text-muted fw-bold">Estás al día</h3>
+            <p class="text-muted">No hay alertas pendientes de revisar.</p>
+            <a href="/" class="btn btn-primary-custom mt-3">Volver al Inicio</a>
+        </div>
+    {% else %}
+
+        <div class="row g-4">
+            {% for r in records %}
+                
+                {# --- LÓGICA DE CLASIFICACIÓN (Jinja2) --- #}
+                {% set is_don = r.get('donacion_id') is not none %}
+                {% set is_stock = r.get('stock_total') is not none %}
+                {% set is_cad = r.get('proxima_caducidad') is not none %}
+
+                {# Definimos estilos según el tipo #}
+                {% if is_don %}
+                    {% set color = 'success' %}   {# Verde #}
+                    {% set icon = 'fa-hand-holding-heart' %}
+                    {% set titulo = 'Nueva Donación' %}
+                    {% set borde = '#28a745' %}
+                {% elif is_stock %}
+                    {% set color = 'warning' %}   {# Amarillo/Naranja #}
+                    {% set icon = 'fa-cubes' %}
+                    {% set titulo = 'Stock Bajo' %}
+                    {% set borde = '#ffc107' %}
+                {% elif is_cad %}
+                    {% set color = 'danger' %}    {# Rojo #}
+                    {% set icon = 'fa-clock' %}
+                    {% set titulo = 'Caducidad Próxima' %}
+                    {% set borde = '#dc3545' %}
+                {% else %}
+                    {% set color = 'secondary' %}
+                    {% set icon = 'fa-bell' %}
+                    {% set titulo = 'Notificación' %}
+                    {% set borde = '#6c757d' %}
+                {% endif %}
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden" style="border-radius: 15px;">
+                        <div class="position-absolute top-0 start-0 bottom-0" style="width: 6px; background-color: {{ borde }};"></div>
+                        
+                        <div class="card-body ps-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center text-{{ color }}">
+                                    <i class="fas {{ icon }} me-2"></i>
+                                    <small class="fw-bold text-uppercase">{{ titulo }}</small>
+                                </div>
+                                
+                                <form method="post" action="{{ url_for('delete_alert', alert_id=r.id) }}" onsubmit="return confirm('¿Descartar esta notificación?');">
+                                    <button type="submit" class="btn btn-link text-muted p-0 text-decoration-none" title="Descartar alerta">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <h5 class="fw-bold text-dark mb-2">
+                                {{ r.get('producto') }}
+                            </h5>
+
+                            <p class="text-muted small mb-3" style="line-height: 1.5;">
+                                {% if is_don %}
+                                    Entrada registrada del lote <strong>{{ r.get('lote_id') }}</strong> con <strong>{{ r.get('unidades',0) }}</strong> unidades.
+                                {% elif is_stock %}
+                                    Quedan <strong>{{ r.get('stock_total',0) }}</strong> unidades. El mínimo establecido es <strong>{{ r.get('minimo_alerta',0) }}</strong>.
+                                {% elif is_cad %}
+                                    Un lote caduca el <strong>{{ r.get('proxima_caducidad') }}</strong>. ¡Priorizar uso!
+                                {% else %}
+                                    {{ r }}
+                                {% endif %}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                                <small class="text-muted" style="font-size: 0.75rem;">
+                                    {{ r.get('generado_en') or r.get('procesado_en') }}
+                                </small>
+
+                                {% if is_stock %}
+                                    <a href="{{ url_for('crear_lote', item_id=r.id_producto if r.id_producto else '#') }}" class="btn btn-sm btn-outline-warning rounded-pill px-3" style="font-size: 0.75rem;">
+                                        Reponer
+                                    </a>
+                                {% elif is_cad %}
+                                    <a href="{{ url_for('chef') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3" style="font-size: 0.75rem;">
+                                        Usar en Menú
+                                    </a>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            {% endfor %}
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,174 +1,237 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chef Virtual - Comedor Social</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #fdfbf7; /* Tono crema suave */
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
+{% extends "base.html" %}
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
+{% block content %}
 
-        h1 {
-            color: #d35400; /* Naranja quemado (gastronómico) */
-            text-align: center;
-            margin-bottom: 30px;
-        }
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-        /* Estilos del Formulario */
-        .search-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 30px;
-            border: 1px solid #e9ecef;
-        }
+<style>
+    /* Estilos específicos para la sección del Chef */
+    .chef-hero {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        padding: 40px 0;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 30px;
+    }
 
-        input[type="text"] {
-            padding: 12px;
-            width: 200px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
+    .chef-card {
+        background: white;
+        border: 0;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
 
-        button {
-            padding: 12px 25px;
-            background-color: #d35400;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
+    .input-group-text {
+        background-color: white;
+        border-right: 0;
+    }
+    
+    .form-control-lg {
+        border-left: 0;
+    }
+    
+    .form-control-lg:focus {
+        box-shadow: none;
+        border-color: #ced4da;
+    }
 
-        button:hover {
-            background-color: #a04000;
-        }
+    /* ESTILOS DEL MENÚ GENERADO (MARKDOWN) */
+    .menu-result {
+        padding: 40px;
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        line-height: 1.8;
+        font-size: 1.05rem;
+    }
 
-        /* ESTILOS PARA EL MENÚ GENERADO (MARKDOWN) */
-        .menu-content {
-            line-height: 1.6;
-        }
+    /* Títulos dentro del menú */
+    .menu-result h1, .menu-result h2 {
+        color: var(--secondary-color);
+        font-family: 'Playfair Display', serif;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+        margin-top: 30px;
+        margin-bottom: 20px;
+    }
 
-        .menu-content h3 {
-            background-color: #fae5d3;
-            padding: 10px;
-            border-radius: 5px;
-            color: #873600;
-            margin-top: 30px;
-        }
+    .menu-result h3 {
+        color: var(--primary-color);
+        font-weight: bold;
+        margin-top: 25px;
+        text-transform: uppercase;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+    }
 
-        .menu-content ul {
-            background-color: #fff;
-            border-left: 4px solid #d35400;
-            padding-left: 20px;
-            list-style-type: none;
-        }
+    /* Listas */
+    .menu-result ul, .menu-result ol {
+        padding-left: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .menu-result li {
+        margin-bottom: 8px;
+    }
 
-        .menu-content li {
-            margin-bottom: 10px;
-            padding: 5px 0;
-        }
+    /* Negritas */
+    .menu-result strong {
+        color: #333;
+        font-weight: 700;
+    }
 
-        /* Estilo de la Tabla generada por la IA */
-        .menu-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 0.95em;
-        }
+    /* Tablas generadas por la IA */
+    .menu-result table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 25px 0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
 
-        .menu-content th, .menu-content td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
+    .menu-result th {
+        background-color: var(--secondary-color);
+        color: white;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+    }
 
-        .menu-content th {
-            background-color: #d35400;
-            color: white;
-        }
+    .menu-result td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f0f0f0;
+        color: #555;
+    }
 
-        .menu-content tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
+    .menu-result tr:last-child td {
+        border-bottom: none;
+    }
 
-        /* Spinner de carga */
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #d35400;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            display: none; /* Oculto por defecto */
-        }
+    .menu-result tr:nth-child(even) {
+        background-color: #fcfcfc;
+    }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* Animación de carga */
+    .loading-container {
+        display: none;
+        text-align: center;
+        padding: 40px;
+    }
+    
+    .spinner-chef {
+        width: 60px;
+        height: 60px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px auto;
+    }
 
-    </style>
-</head>
-<body>
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    <div class="container">
-        <h1>👨‍🍳 Chef Virtual de Aprovechamiento</h1>
+</style>
 
-        <div class="search-box">
-            <form action="/chef" method="POST" onsubmit="mostrarCarga()">
-                <label for="codigo">Código Postal del Centro:</label>
-                <input type="text" name="codigo_postal" placeholder="Ej: 46001" required>
-                <button type="submit">Generar Menú</button>
-            </form>
-            <div id="loading" class="loader"></div>
-            <p id="loading-text" style="display:none; color: #666;">Analizando inventario y caducidades...</p>
-        </div>
+<div class="chef-hero">
+    <div class="container text-center">
+        <span class="badge rounded-pill bg-white text-dark shadow-sm px-3 py-2 mb-3 border">
+            <i class="fas fa-magic text-warning me-1"></i> Inteligencia Artificial
+        </span>
+        <h1 class="display-4 fw-bold" style="font-family: 'Playfair Display', serif; color: var(--secondary-color);">
+            Chef Virtual de Aprovechamiento
+        </h1>
+        <p class="lead text-muted mx-auto" style="max-width: 700px;">
+            Genera menús nutritivos y deliciosos basados en los alimentos que están a punto de caducar en tu inventario. Reduce el desperdicio, maximiza el sabor.
+        </p>
+    </div>
+</div>
 
-        {% if menu %}
-            <hr>
-            <div id="resultado-menu" class="menu-content">
+<div class="container pb-5">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="card chef-card mb-5">
+                <div class="card-body p-5">
+                    <form action="/chef" method="POST" onsubmit="mostrarCarga()">
+                        <label for="codigo" class="form-label fw-bold text-secondary text-uppercase small mb-3">
+                            Selecciona el Centro (Código Postal)
+                        </label>
+                        
+                        <div class="d-flex gap-3">
+                            <div class="input-group input-group-lg flex-grow-1 border rounded overflow-hidden">
+                                <span class="input-group-text"><i class="fas fa-map-marker-alt text-danger"></i></span>
+                                <input type="text" name="codigo_postal" class="form-control form-control-lg border-0" 
+                                       placeholder="Ej: 46001" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-lg text-white px-4 fw-bold shadow-sm" 
+                                    style="background-color: var(--primary-color); border-radius: 8px;">
+                                <i class="fas fa-utensils me-2"></i> Crear Menú
+                            </button>
+                        </div>
+                        <div class="form-text mt-2 ms-1 text-muted">
+                            <i class="fas fa-info-circle me-1"></i> La IA analizará el stock actual y las fechas de caducidad.
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="loading" class="loading-container">
+                <div class="spinner-chef"></div>
+                <h4 class="text-secondary fw-bold">El Chef está pensando...</h4>
+                <p class="text-muted">Analizando ingredientes, combinando sabores y redactando recetas.</p>
+            </div>
+
+            {% if menu %}
+                <div id="menu-container" class="animate__animated animate__fadeInUp">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="text-serif fw-bold m-0" style="color: var(--secondary-color);">Propuesta del Día</h4>
+                        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-print me-2"></i> Imprimir / Guardar PDF
+                        </button>
+                    </div>
+
+                    <div id="resultado-menu" class="menu-result"></div>
                 </div>
 
-            <script>
-                // Tomamos el texto crudo que envió Python (con saltos de línea y símbolos)
-                const rawMarkdown = `{{ menu | safe }}`;
-                
-                // Usamos la librería marked para convertirlo a HTML real
-                document.getElementById('resultado-menu').innerHTML = marked.parse(rawMarkdown);
-            </script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Tomamos el texto crudo que envió Python
+                        // Usamos tojson para evitar problemas de comillas
+                        const rawMarkdown = {{ menu | tojson }};
+                        
+                        if (rawMarkdown) {
+                            // Convertimos Markdown a HTML limpio
+                            document.getElementById('resultado-menu').innerHTML = marked.parse(rawMarkdown);
+                        }
+                    });
+                </script>
+            {% endif %}
 
-            <div style="text-align: center; margin-top: 30px;">
-                <button onclick="window.print()" style="background-color: #333;">🖨️ Imprimir Menú y Lista</button>
-            </div>
-        {% endif %}
+            {% if menu and "Ocurrió un error" in menu|string %}
+                <div class="alert alert-danger shadow-sm border-0 rounded-3 p-4 text-center mt-4">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3 text-danger"></i>
+                    <h5>Ups, algo salió mal en la cocina</h5>
+                    <p class="mb-0">{{ menu }}</p>
+                </div>
+            {% endif %}
 
-        {% if "Ocurrió un error" in menu|string %}
-             {% endif %}
-
+        </div>
     </div>
+</div>
 
-    <script>
-        function mostrarCarga() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('loading-text').style.display = 'block';
-        }
-    </script>
-</body>
-</html>
+<script>
+    function mostrarCarga() {
+        // Ocultar resultados anteriores si los hay
+        const menuContainer = document.getElementById('menu-container');
+        if(menuContainer) menuContainer.style.display = 'none';
+
+        // Mostrar animación de carga
+        document.getElementById('loading').style.display = 'block';
+    }
+</script>
+
+{% endblock %}

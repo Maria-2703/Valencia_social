@@ -1,199 +1,152 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donaciones - Comedor Social Valencia</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-            border-bottom: 3px solid #4CAF50;
-            padding-bottom: 15px;
-        }
-        
-        .donations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-        }
-        
-        .donation-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 8px;
-            padding: 20px;
-            color: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .donation-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 12px rgba(0,0,0,0.2);
-        }
-        
-        .card-header {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-            padding-bottom: 10px;
-        }
-        
-        .card-section {
-            margin-bottom: 12px;
-        }
-        
-        .section-title {
-            font-size: 12px;
-            text-transform: uppercase;
-            opacity: 0.8;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        
-        .section-content {
-            font-size: 14px;
-            word-break: break-word;
-        }
-        
-        .badge {
-            display: inline-block;
-            background-color: rgba(255,255,255,0.2);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        
-        .badge-anonimo {
-            background-color: #FF9800;
-        }
-        
-        .badge-persona {
-            background-color: #2196F3;
-        }
-        
-        .badge-organizacion {
-            background-color: #4CAF50;
-        }
-        
-        .no-donations {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-            font-size: 18px;
-        }
-        
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        
-        .back-link:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>📦 Registro de Donaciones</h1>
-        
-        {% if donations %}
-            <div class="donations-grid">
-                {% for donation in donations %}
-                    <div class="donation-card">
-                        <div class="card-header">
-                            {{ donation.producto.categoria }} - {{ donation.producto.producto }}
-                        </div>
-                        
-                        <div class="card-section">
-                            <div class="section-title">Variante</div>
-                            <div class="section-content">{{ donation.producto.variante }}</div>
-                        </div>
-                        
-                        <div class="card-section">
-                            <div class="section-title">Cantidad</div>
-                            <div class="section-content">
-                                {{ donation.lote.unidades }} unidades
-                            </div>
-                        </div>
-                        
-                        <div class="card-section">
-                            <div class="section-title">Fecha Entrada</div>
-                            <div class="section-content">
-                                {{ donation.lote.fecha_entrada.strftime('%d/%m/%Y') if donation.lote.fecha_entrada else 'N/A' }}
-                            </div>
-                        </div>
-                        
-                        <div class="card-section">
-                            <div class="section-title">Fecha Caducidad</div>
-                            <div class="section-content">
-                                {{ donation.lote.fecha_caducidad.strftime('%d/%m/%Y') if donation.lote.fecha_caducidad else 'N/A' }}
-                            </div>
-                        </div>
-                        
-                        <div class="card-section">
-                            <div class="section-title">Donante</div>
-                            <div class="section-content">
-                                {{ donation.donante.nombre if donation.donante.nombre else 'Anónimo' }}
-                                <span class="badge badge-{{ donation.donante.tipo }}">
-                                    {{ donation.donante.tipo }}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        {% if donation.donante.contacto %}
-                            <div class="card-section">
-                                <div class="section-title">Contacto</div>
-                                <div class="section-content">{{ donation.donante.contacto }}</div>
-                            </div>
-                        {% endif %}
-                        
-                        <div class="card-section">
-                            <div class="section-title">Procesado</div>
-                            <div class="section-content">
-                                {{ donation.procesado_en.strftime('%d/%m/%Y %H:%M') if donation.procesado_en else 'N/A' }}
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="no-donations">
-                <p>❌ No hay donaciones registradas</p>
-            </div>
-        {% endif %}
-        
-        <a href="/" class="back-link">← Volver al inicio</a>
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="text-serif fw-bold mb-0" style="color: var(--secondary-color);">Registro de Solidaridad</h2>
+            <p class="text-muted mb-0">Histórico de entradas por donaciones recibidas.</p>
+        </div>
+        <div class="bg-white px-4 py-2 rounded-pill shadow-sm border">
+            <span class="fw-bold text-secondary">{{ donations|length }}</span> <span class="text-muted small">Donaciones registradas</span>
+        </div>
     </div>
-</body>
-</html>
+
+    {% if donations %}
+        <div class="row g-4">
+            {% for donation in donations %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm donation-card">
+                        
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge rounded-pill text-uppercase" style="background-color: var(--bg-color); color: var(--text-main); border: 1px solid #e0e0e0;">
+                                    {{ donation.producto.categoria }}
+                                </span>
+                                <small class="text-muted" title="Fecha de procesamiento">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ donation.procesado_en.strftime('%d/%m') if donation.procesado_en else '-' }}
+                                </small>
+                            </div>
+
+                            <h4 class="fw-bold mb-1" style="color: var(--secondary-color);">
+                                {{ donation.producto.producto }}
+                            </h4>
+                            <p class="text-muted small mb-3">
+                                {{ donation.producto.variante or 'Estándar' }}
+                            </p>
+
+                            <hr class="opacity-10">
+
+                            <div class="row g-2 text-center mt-2">
+                                <div class="col-6 border-end">
+                                    <h5 class="fw-bold mb-0">{{ donation.lote.unidades }}</h5>
+                                    <small class="text-muted" style="font-size: 0.7rem;">UNIDADES</small>
+                                </div>
+                                <div class="col-6">
+                                    {% set caducidad = donation.lote.fecha_caducidad %}
+                                    <h5 class="fw-bold mb-0">
+                                        {{ caducidad.strftime('%d/%m/%y') if caducidad else '-' }}
+                                    </h5>
+                                    <small class="text-muted" style="font-size: 0.7rem;">CADUCIDAD</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer border-0 p-3" style="background-color: #f8f9fa;">
+                            <div class="d-flex align-items-center">
+                                <div class="donor-icon {% if donation.donante.tipo == 'organizacion' %}organizacion{% elif donation.donante.tipo == 'persona' %}persona{% else %}default{% endif %}">
+                                    {% if donation.donante.tipo == 'organizacion' %}
+                                        <i class="fas fa-building"></i>
+                                    {% elif donation.donante.tipo == 'persona' %}
+                                        <i class="fas fa-user"></i>
+                                    {% else %}
+                                        <i class="fas fa-user-secret"></i>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-bold text-truncate" style="font-size: 0.95rem;">
+                                        {{ donation.donante.nombre if donation.donante.nombre else 'Donante Anónimo' }}
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted text-capitalize">{{ donation.donante.tipo }}</small>
+                                        
+                                        {% if donation.donante.contacto %}
+                                            <span class="text-secondary" data-bs-toggle="tooltip" title="{{ donation.donante.contacto }}">
+                                                <i class="far fa-address-card"></i>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-hand-holding-heart" style="font-size: 4rem; color: #e0e0e0;"></i>
+            </div>
+            <h3 class="text-muted fw-bold">Aún no hay donaciones</h3>
+            <p class="text-muted">Las donaciones procesadas aparecerán aquí.</p>
+            <a href="/" class="btn btn-primary-custom mt-3">Volver al Inicio</a>
+        </div>
+    {% endif %}
+
+    {% if donations %}
+    <div class="mt-5 text-center">
+        <a href="/" class="text-muted text-decoration-none small">
+            <i class="fas fa-arrow-left me-1"></i> Volver al panel principal
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .donation-card {
+        transition: transform 0.2s;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .donation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    .donor-icon {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+    }
+
+    .donor-icon.organizacion {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .donor-icon.persona {
+        background-color: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .donor-icon.default {
+        background-color: #f5f5f5;
+        color: #757575;
+    }
+</style>
+
+{% endblock %}
