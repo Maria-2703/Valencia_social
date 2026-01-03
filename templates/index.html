@@ -2,128 +2,56 @@
 
 {% block content %}
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
     /* --- HERO SECTION --- */
     .hero-section {
-        background: 
-            /* 1. Degradado Izquierda -> Derecha (Para leer el texto) */
-            linear-gradient(to right, #fbf8f1 35%, rgba(251, 248, 241, 0.5) 60%, rgba(251, 248, 241, 0) 100%),
-            /* 2. Degradado Abajo -> Arriba (PARA QUITAR LA LÍNEA DE CORTE) */
-            linear-gradient(to top, #fbf8f1 5%, rgba(251, 248, 241, 0) 30%),
-            /* 3. La Imagen */
-            url('https://ssvp.es/wp-content/uploads/2024/07/comedores-sociales-para-personas-sin-hogar.jpg');
-        
+        background: linear-gradient(to right, #fbf8f1 35%, rgba(251, 248, 241, 0.5) 60%, rgba(251, 248, 241, 0) 100%),
+                    linear-gradient(to top, #fbf8f1 5%, rgba(251, 248, 241, 0) 30%),
+                    url('https://ssvp.es/wp-content/uploads/2024/07/comedores-sociales-para-personas-sin-hogar.jpg');
         background-size: cover;
-        background-position: center 30%; /* Subimos un poco el foco de la foto */
-        background-repeat: no-repeat;
-        
-        /* Reducimos padding para que quepa todo en pantalla */
+        background-position: center 30%;
         padding: 60px 0 100px 0; 
-        position: relative;
-        z-index: 1;
+        position: relative; z-index: 1;
     }
-
-    .hero-text h1 {
-        font-family: 'Playfair Display', serif;
-        font-size: 3.2rem; /* Un pelín más pequeño para compactar */
-        color: #000;
-        margin-bottom: 15px;
-        line-height: 1.1;
-    }
-
-    .hero-text p {
-        font-size: 1.1rem;
-        color: #444;
-        max-width: 550px;
-        font-weight: 500;
-    }
+    .hero-text h1 { font-family: 'Playfair Display', serif; font-size: 3.2rem; margin-bottom: 15px; line-height: 1.1; }
+    .hero-text p { font-size: 1.1rem; color: #444; max-width: 550px; font-weight: 500; }
 
     /* Tarjeta flotante fecha */
     .info-card {
-        background-color: rgba(255, 255, 255, 0.9);
-        border-left: 5px solid var(--primary-color);
-        padding: 20px;
-        border-radius: 15px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border-left: 5px solid var(--primary-color); 
+        padding: 20px; border-radius: 15px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-        max-width: 320px; /* Un poco más compacta */
-        width: 100%;
-        backdrop-filter: blur(4px);
+        max-width: 320px; width: 100%; backdrop-filter: blur(4px);
     }
 
     /* --- CONTENEDOR DE TARJETAS --- */
-    .white-box-container {
-        /* Subimos más el bloque para compactar la vista */
-        margin-top: -90px; 
-        position: relative; 
-        z-index: 10; 
-        padding-bottom: 40px;
-    }
-
-    /* Estilo Tarjeta */
+    .white-box-container { margin-top: -90px; position: relative; z-index: 10; padding-bottom: 40px; }
+    
     .action-card {
-        background: white;
-        border: 2px solid var(--secondary-color);
-        border-radius: 20px;
-        
-        /* AJUSTE DE TAMAÑO: Más altas pero controlando el ancho */
-        padding: 25px 20px; 
-        min-height: 140px; /* Forzamos altura */
-        max-width: 480px;  /* Limitamos el ancho máximo para que sean "estrechas" */
-        margin: 0 auto;    /* Las centramos en su columna */
-        
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        transition: transform 0.2s, box-shadow 0.2s;
-        text-decoration: none;
-        color: inherit;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        background: white; border: 2px solid var(--secondary-color); border-radius: 20px;
+        padding: 25px 20px; min-height: 140px; max-width: 480px; margin: 0 auto;
+        display: flex; align-items: center; transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none; color: inherit; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
-
-    .action-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 25px rgba(31, 78, 95, 0.15);
-        background-color: #fbfeff;
-    }
-
-    .card-icon {
-        width: 65px; 
-        height: 65px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-right: 15px;
-        flex-shrink: 0;
-    }
-    
+    .action-card:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(31, 78, 95, 0.15); background-color: #fbfeff; }
+    .card-icon { width: 65px; height: 65px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0; }
     .card-icon i { font-size: 2.8rem; }
-    
-    .card-icon img {
-        width: 50px;
-        height: 50px;
-        object-fit: contain;
-    }
+    .card-icon img { width: 50px; height: 50px; object-fit: contain; }
+    .card-content h3 { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 4px; color: #000; }
+    .btn-fake { background-color: var(--secondary-color); color: white; padding: 4px 18px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; display: inline-block; margin-top: 4px; }
 
-    .card-content h3 {
-        font-weight: 800;
-        font-size: 1.1rem;
-        text-transform: uppercase;
-        margin-bottom: 4px;
-        color: #000;
-        letter-spacing: 0.5px;
+    /* --- ESTILOS DEL MAPA --- */
+    .map-section { padding: 40px 0 80px 0; background-color: #fbf8f1; }
+    #solidarity-map { 
+        height: 450px; width: 100%; border-radius: 20px; 
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1); border: 4px solid white;
     }
-
-    .btn-fake {
-        background-color: var(--secondary-color);
-        color: white;
-        padding: 4px 18px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        display: inline-block;
-        margin-top: 4px;
-    }
+    .map-legend { font-size: 0.9rem; margin-top: 10px; display: flex; gap: 20px; justify-content: center; }
+    .dot { width: 12px; height: 12px; display: inline-block; border-radius: 50%; margin-right: 5px; }
 </style>
 
 <section class="hero-section">
@@ -137,11 +65,30 @@
             </div>
             
             <div class="col-lg-5 d-flex justify-content-lg-end justify-content-center mt-3 mt-lg-0">
-                <div class="info-card">
+                <div class="info-card" style="border-left-color: {% if menu_hoy %}#28a745{% else %}#e2a03f{% endif %};">
                     <h6 class="text-uppercase text-muted mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">Hoy</h6>
                     <h4 class="mb-0 date-display fw-bold" style="font-family: 'Lato', sans-serif;">CARGANDO...</h4>
                     <hr style="margin: 10px 0;">
-                    <small class="text-muted" style="font-size: 0.8rem;">MENÚ: NO SE HA GENERADO AÚN</small>
+                    
+                    {% if menu_hoy %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <small class="text-success fw-bold" style="font-size: 0.8rem;">MENÚ ACTIVO</small>
+                        </div>
+                        <p class="text-muted small mb-2" style="line-height: 1.3;">
+                            <strong>Principal:</strong> {{ menu_hoy.plato_principal }}
+                        </p>
+                        <a href="{{ url_for('chef') }}" class="btn btn-sm btn-outline-success w-100 rounded-pill" style="font-size: 0.8rem;">Ver Detalles</a>
+                    {% else %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-exclamation-circle text-warning me-2" style="color: #e2a03f !important;"></i>
+                            <small class="text-muted fw-bold" style="font-size: 0.8rem; color: #e2a03f !important;">NO GENERADO AÚN</small>
+                        </div>
+                        <a href="{{ url_for('chef') }}" class="btn btn-sm text-white w-100 rounded-pill shadow-sm" 
+                           style="background-color: var(--secondary-color); font-size: 0.8rem;">
+                            <i class="fas fa-magic me-1"></i> Generar Ahora
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -150,68 +97,112 @@
 
 <section class="white-box-container container">
     <div class="row g-4 justify-content-center">
-        
         <div class="col-md-6 col-lg-5">
             <a href="/predict" class="action-card">
-                <div class="card-icon">
-                    <img src="https://cdn-icons-png.flaticon.com/512/1164/1164394.png" alt="Bola Mágica">
-                </div>
-                <div class="card-content">
-                    <h3>Predecir</h3>
-                    <p class="text-muted small mb-1">Predicción de demanda</p>
-                    <span class="btn-fake">Predecir</span>
-                </div>
+                <div class="card-icon"><img src="https://cdn-icons-png.flaticon.com/512/1164/1164394.png" alt="Bola Mágica"></div>
+                <div class="card-content"><h3>Predecir</h3><p class="text-muted small mb-1">Predicción de demanda</p><span class="btn-fake">Predecir</span></div>
             </a>
         </div>
-
         <div class="col-md-6 col-lg-5">
             <a href="/inventario" class="action-card">
-                <div class="card-icon">
-                    <i class="fas fa-warehouse" style="color: #e2a03f;"></i>
-                </div>
-                <div class="card-content">
-                    <h3>Inventario</h3>
-                    <p class="text-muted small mb-1">Alimentos disponibles</p>
-                    <span class="btn-fake">Ver</span>
-                </div>
+                <div class="card-icon"><i class="fas fa-warehouse" style="color: #e2a03f;"></i></div>
+                <div class="card-content"><h3>Inventario</h3><p class="text-muted small mb-1">Alimentos disponibles</p><span class="btn-fake">Ver</span></div>
             </a>
         </div>
-
         <div class="col-md-6 col-lg-5">
             <a href="/donacion" class="action-card">
-                <div class="card-icon">
-                    <i class="fas fa-box-open" style="color: #c96c4d;"></i>
-                </div>
-                <div class="card-content">
-                    <h3>Donaciones</h3>
-                    <p class="text-muted small mb-1">Alimentos donados</p>
-                    <span class="btn-fake">Ver</span>
-                </div>
+                <div class="card-icon"><i class="fas fa-box-open" style="color: #c96c4d;"></i></div>
+                <div class="card-content"><h3>Donaciones</h3><p class="text-muted small mb-1">Alimentos donados</p><span class="btn-fake">Ver</span></div>
             </a>
         </div>
-
         <div class="col-md-6 col-lg-5">
-            <a href="/generar" class="action-card">
-                <div class="card-icon">
-                    <i class="fas fa-wand-magic-sparkles" style="color: #f4d35e;"></i>
-                </div>
-                <div class="card-content">
-                    <h3>Generar</h3>
-                    <p class="text-muted small mb-1">Menú o Anuncio</p>
-                    <span class="btn-fake">Crear</span>
-                </div>
+            <a href="{{ url_for('chef') }}" class="action-card">
+                <div class="card-icon"><i class="fas fa-wand-magic-sparkles" style="color: #f4d35e;"></i></div>
+                <div class="card-content"><h3>Generar</h3><p class="text-muted small mb-1">Menú o Anuncio</p><span class="btn-fake">Crear</span></div>
             </a>
         </div>
+    </div>
+</section>
 
+<section class="map-section animate__animated animate__fadeInUp">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-serif" style="color: var(--secondary-color);">Red de Solidaridad Activa</h2>
+            <p class="text-muted">Visualización en tiempo real de centros, donantes y puntos de recogida en la provincia.</p>
+        </div>
+        
+        <div id="solidarity-map"></div>
+        
+        <div class="map-legend text-muted">
+            <span><span class="dot" style="background: #2a81cb;"></span>Tu Sede</span>
+            <span><span class="dot" style="background: #cb2b3e;"></span>Urgencias (Ademuz)</span>
+            <span><span class="dot" style="background: #2aad27;"></span>Donantes Activos</span>
+        </div>
     </div>
 </section>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // 1. FECHA
         const dateElement = document.querySelector('.date-display');
         const now = new Date();
         const options = { day: 'numeric', month: 'long' }; 
         dateElement.textContent = now.toLocaleDateString('es-ES', options).toUpperCase();
+
+        // 2. INICIALIZAR EL MAPA
+        // Centramos en un punto medio entre Valencia y Ademuz, con zoom alejado (9) para ver toda la provincia
+        var map = L.map('solidarity-map').setView([39.65, -0.8], 9);
+
+        // Capa de Mapa
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // --- ICONOS PERSONALIZADOS ---
+        var mainIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+        });
+        
+        var donorIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+        });
+
+        var alertIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+        });
+
+        // --- MARCADORES ---
+
+        // 1. TU SEDE (Azul - Valencia Centro)
+        L.marker([39.4699, -0.3763], {icon: mainIcon}).addTo(map)
+            .bindPopup("<b>MesaComún Central</b><br>Sede Principal (Valencia)");
+
+        // 2. DONANTES (Verdes - Inventados por Valencia)
+        
+        // Mercado Central area
+        L.marker([39.4740, -0.3790], {icon: donorIcon}).addTo(map)
+            .bindPopup("<b>Frutería 'La Huerta'</b><br>Donación: 20kg Naranjas");
+            
+        // Ruzafa
+        L.marker([39.4600, -0.3700], {icon: donorIcon}).addTo(map)
+            .bindPopup("<b>Horno 'El Artesano'</b><br>Recogida: Pan del día (14:00h)");
+
+        // Benimaclet
+        L.marker([39.4850, -0.3600], {icon: donorIcon}).addTo(map)
+            .bindPopup("<b>Cooperativa 'EcoVlc'</b><br>Donación: Verduras frescas");
+
+        // Zona Puerto
+        L.marker([39.4620, -0.3300], {icon: donorIcon}).addTo(map)
+            .bindPopup("<b>Pescadería del Mar</b><br>Donación: Excedente pescado");
+
+        // 3. URGENCIA (Rojo - Ademuz)
+        // Coordenadas aproximadas de Ademuz
+        L.marker([40.0631, -1.2866], {icon: alertIcon}).addTo(map)
+            .bindPopup("<b>Comedor Rural Ademuz</b><br>⚠️ ALERTA: Falta de voluntarios urgentes");
+
     });
 </script>
 
