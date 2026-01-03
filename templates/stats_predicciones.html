@@ -1,130 +1,115 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Estadísticas de Predicciones - Comedor Social</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 40px 20px;
-        }
+{% extends "base.html" %}
 
-        .container {
-            max-width: 1400px;
-            margin: auto;
-        }
+{% block content %}
 
-        h1 {
-            text-align: center;
-            margin-bottom: 40px;
-            color: #333;
-        }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
-            margin-bottom: 40px;
-        }
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="text-serif fw-bold mb-0" style="color: var(--secondary-color);">Inteligencia Predictiva</h2>
+            <p class="text-muted mb-0">Análisis de demanda y factores socioeconómicos.</p>
+        </div>
+        <a href="/stats" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="fas fa-arrow-left me-1"></i> Volver al panel general
+        </a>
+    </div>
 
-        .chart-card {
-            background-color: #ffffff;
-            border-radius: 12px;
-            padding: 25px 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .chart-title {
-            text-align: center;
-            color: #4CAF50;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        canvas {
-            max-width: 100%;
-            max-height: 350px;
-        }
-
-        .back-button {
-            display: block;
-            margin: 40px auto 0 auto;
-            padding: 12px 25px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            border-radius: 25px;
-            text-align: center;
-            transition: background 0.3s ease;
-        }
-
-        .back-button:hover {
-            background-color: #43a047;
-        }
-
-        @media (max-width: 900px) {
-            .grid {
-                grid-template-columns: 1fr; /* 1 gráfico por fila en pantallas pequeñas */
-            }
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>📊 Estadísticas de Predicciones</h1>
-
-    <div class="grid">
-        <!-- Predicciones por Código Postal - Horizontal Bar -->
-        <div class="chart-card">
-            <h2 class="chart-title">Predicciones por Código Postal</h2>
-            <canvas id="chartCP"></canvas>
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-map-marked-alt me-2"></i>Predicciones por Código Postal</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="chartCP"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Predicciones por Tipo de Demanda - Donut -->
-        <div class="chart-card">
-            <h2 class="chart-title">Predicciones por Tipo de Demanda</h2>
-            <canvas id="chartTipo"></canvas>
-        </div>
-
-        <!-- Promedio Renta por Municipio - Vertical Bar -->
-        <div class="chart-card">
-            <h2 class="chart-title">Promedio Renta por Municipio</h2>
-            <canvas id="chartRentaMuni"></canvas>
-        </div>
-
-        <!-- Promedio Renta por Tipo de Demanda - Columnas -->
-        <div class="chart-card">
-            <h2 class="chart-title">Promedio Renta por Tipo de Demanda</h2>
-            <canvas id="chartRentaDemanda"></canvas>
-        </div>
-
-        <!-- Promedio Habitantes por Municipio - Barras Verticales -->
-        <div class="chart-card">
-            <h2 class="chart-title">Promedio Habitantes por Municipio</h2>
-            <canvas id="chartHabMuni"></canvas>
-        </div>
-
-        <!-- Paro Registrado por Municipio - Barras Verticales -->
-        <div class="chart-card">
-            <h2 class="chart-title">Paro Registrado por Municipio</h2>
-            <canvas id="chartParoMuni"></canvas>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-chart-pie me-2"></i>Tipología de Demanda</h6>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="chartTipo"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <a href="/stats" class="back-button">⬅ Volver a Estadísticas</a>
+    <h5 class="fw-bold text-secondary mb-3 mt-4"><i class="fas fa-users me-2"></i>Contexto Socioeconómico</h5>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-euro-sign me-2"></i>Renta Media (Municipio)</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="chartRentaMuni"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-wallet me-2"></i>Renta vs Tipo de Demanda</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="chartRentaDemanda"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-user-friends me-2"></i>Población Media</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="chartHabMuni"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-briefcase me-2"></i>Desempleo Registrado</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="chartParoMuni"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
+    // Configuración Global Chart.js
+    Chart.defaults.font.family = "'Lato', sans-serif";
+    Chart.defaults.color = '#666';
+
+    // Datos Flask
     const predPorCP = {{ pred_por_cp | tojson }};
     const predPorTipo = {{ pred_por_tipo | tojson }};
     const predRentaMuni = {{ pred_renta_muni | tojson }};
@@ -132,96 +117,108 @@
     const predHabMuni = {{ pred_hab_muni | tojson }};
     const predParoMuni = {{ pred_paro_muni | tojson }};
 
-    // Predicciones por Código Postal - Horizontal Bar
+    // 1. CP - Vertical Bar
     new Chart(document.getElementById("chartCP"), {
         type: 'bar',
         data: {
             labels: predPorCP.map(d => d.codigo_postal),
             datasets: [{
-                label: 'Número de Predicciones',
+                label: 'Nº Predicciones',
                 data: predPorCP.map(d => d.num_predicciones),
-                backgroundColor: '#FFDCDC'
+                backgroundColor: 'rgba(31, 78, 95, 0.7)', 
+                borderRadius: 4
             }]
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { x: { beginAtZero: true }, y: { ticks: { autoSkip: false } } }
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
         }
     });
 
-    // Predicciones por Tipo de Demanda - Donut
+    // 2. TIPO - Donut (LIMPIO SIN ETIQUETAS)
     new Chart(document.getElementById("chartTipo"), {
         type: 'doughnut',
         data: {
             labels: predPorTipo.map(d => d.tipo_demanda),
             datasets: [{
                 data: predPorTipo.map(d => d.total_predicciones),
-                backgroundColor: ['#FFDCDC','#DDF6D2','#FFE8CD','#F1EAFF','#F6FFDE']
+                backgroundColor: ['#1f4e5f', '#c96c4d', '#e2a03f', '#28a745', '#6a9ae2'],
+                borderWidth: 0
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { position: 'right' } }
+            maintainAspectRatio: false,
+            plugins: { 
+                // La leyenda a la derecha es suficiente, desactivamos tooltips si quieres total limpieza
+                legend: { position: 'right', labels: { usePointStyle: true } }
+            }
         }
     });
 
-    // Promedio Renta por Municipio - Vertical Bar
+    // 3. RENTA MUNI - Vertical
     new Chart(document.getElementById("chartRentaMuni"), {
         type: 'bar',
         data: {
             labels: predRentaMuni.map(d => d.codigo_postal),
             datasets: [{
-                label: 'Promedio Renta (€)',
+                label: 'Renta Media (€)',
                 data: predRentaMuni.map(d => d.avg_renta),
-                backgroundColor: '#DDF6D2'
+                backgroundColor: 'rgba(40, 167, 69, 0.7)', 
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
         }
     });
 
-    // Promedio Renta por Tipo de Demanda - Columnas
+    // 4. RENTA DEMANDA - Vertical
     new Chart(document.getElementById("chartRentaDemanda"), {
         type: 'bar',
         data: {
             labels: predRentaDemanda.map(d => d.tipo_demanda),
             datasets: [{
-                label: 'Promedio Renta (€)',
+                label: 'Renta Media (€)',
                 data: predRentaDemanda.map(d => d.avg_renta),
-                backgroundColor: ['#FFDCDC','#DDF6D2','#FFE8CD','#F1EAFF','#F6FFDE']
+                backgroundColor: 'rgba(201, 108, 77, 0.7)', 
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
         }
     });
 
-    // Promedio Habitantes por Municipio - Barras Verticales
+    // 5. HABITANTES - Vertical
     new Chart(document.getElementById("chartHabMuni"), {
         type: 'bar',
         data: {
             labels: predHabMuni.map(d => d.codigo_postal),
             datasets: [{
-                label: 'Promedio Habitantes',
+                label: 'Habitantes',
                 data: predHabMuni.map(d => d.avg_habitantes),
-                backgroundColor: '#F1EAFF'
+                backgroundColor: 'rgba(106, 154, 226, 0.7)', 
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
         }
     });
 
-    // Paro Registrado por Municipio - Barras Verticales
+    // 6. PARO - Vertical
     new Chart(document.getElementById("chartParoMuni"), {
         type: 'bar',
         data: {
@@ -229,16 +226,17 @@
             datasets: [{
                 label: 'Paro Registrado',
                 data: predParoMuni.map(d => d.avg_paro),
-                backgroundColor: '#F6FFDE'
+                backgroundColor: 'rgba(226, 160, 63, 0.7)', 
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: false } } }
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
         }
     });
 </script>
 
-</body>
-</html>
+{% endblock %}

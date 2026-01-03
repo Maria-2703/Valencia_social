@@ -1,177 +1,151 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Estadísticas de Inventario - Comedor Social</title>
+{% extends "base.html" %}
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block content %}
 
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 40px 20px;
-        }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        .container {
-            max-width: 1200px;
-            margin: auto;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 40px;
-            color: #333;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 30px;
-        }
-
-        .chart-card {
-            background-color: #ffffff;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chart-title {
-            text-align: center;
-            color: #4CAF50;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        canvas {
-            max-height: 350px;
-        }
-
-        /* Botón volver */
-        .btn-back {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #4CAF50;
-            color: white;
-            font-weight: bold;
-            text-decoration: none;
-            border-radius: 25px;
-            transition: background 0.3s ease;
-        }
-
-        .btn-back:hover {
-            background-color: #43a047;
-        }
-
-        .btn-container {
-            grid-column: 1 / -1;
-            text-align: center;
-            margin-top: 30px;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>📦 Estadísticas de Inventario</h1>
-
-    <div class="grid">
-        <!-- Inventario por Producto -->
-        <div class="chart-card">
-            <h2 class="chart-title">Stock por Producto</h2>
-            <div style="display:flex; justify-content:center; align-items:center;">
-                <canvas id="chartProducto"></canvas>
-            </div>
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="text-serif fw-bold mb-0" style="color: var(--secondary-color);">Análisis de Inventario</h2>
+            <p class="text-muted mb-0">Estado actual del stock, valoración económica y previsión de caducidades.</p>
         </div>
+        <a href="/stats" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="fas fa-arrow-left me-1"></i> Volver al panel general
+        </a>
+    </div>
 
-        <!-- Inventario por Categoría -->
-        <div class="chart-card">
-            <h2 class="chart-title">Stock por Categoría</h2>
-            <div style="display:flex; justify-content:center; align-items:center;">
-                <canvas id="chartCategoria"></canvas>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-euro-sign me-2"></i>Evolución de Costes (Entradas)</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="chartCoste"></canvas>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <!-- Inventario por Proveedor/Donación -->
-        <div class="chart-card">
-            <h2 class="chart-title">Unidades por Proveedor / Donación</h2>
-            <div style="display:flex; justify-content:center; align-items:center;">
-                <canvas id="chartProveedor"></canvas>
-            </div>
-        </div>
-
-        <!-- Inventario por Caducidad -->
-        <div class="chart-card">
-            <h2 class="chart-title">Próximas Caducidades</h2>
-            <div style="display:flex; justify-content:center; align-items:center;">
-                <canvas id="chartCaducidad"></canvas>
-            </div>
-        </div>
-
-        <!-- Inventario por Municipio -->
-        <div class="chart-card">
-            <h2 class="chart-title">Stock por Municipio</h2>
-            <div style="display:flex; justify-content:center; align-items:center;">
-                <canvas id="chartMunicipio"></canvas>
-            </div>
-        </div>
-
-        <!-- Inventario por Gasto -->
-        <div class="chart-card">
-            <h2 class="chart-title">Gastos por Fecha de Entrada</h2>
-            <div style="display:flex; justify-content:center; align-items:center;">
-                <canvas id="chartCoste"></canvas>
-            </div>
-        </div>
-
-        <!-- Botón volver -->
-        <div class="btn-container">
-            <a href="/stats" class="btn-back">← Volver a estadísticas</a>
         </div>
     </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-tags me-2"></i>Stock por Categoría</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="chartCategoria"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-truck-loading me-2"></i>Origen del Stock</h6>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="chartProveedor"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-cubes me-2"></i>Stock por Producto</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 400px;"> 
+                        <canvas id="chartProducto"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-secondary"><i class="fas fa-map-marked-alt me-2"></i>Distribución Geográfica</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 400px;">
+                        <canvas id="chartMunicipio"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius: 15px; border-left: 5px solid #ff3b30;">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-danger"><i class="fas fa-hourglass-half me-2"></i>Proyección de Caducidades</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="chartCaducidad"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    /* ================= INVENTARIO POR PRODUCTO ================= */
+    // Configuración Global Chart.js
+    Chart.defaults.font.family = "'Lato', sans-serif";
+    Chart.defaults.color = '#666';
+
+    // ==== Datos de Flask ====
     const invProducto = {{ inv_por_prod | tojson }};
+    const invCategoria = {{ inv_por_cat | tojson }};
+    const invProveedor = {{ inv_por_proveedor | tojson }};
+    const invCaducidad = {{ inv_por_caducidad | tojson }};
+    const invMuni = {{ inv_por_muni | tojson }};
+    const invCoste = {{ inv_por_coste | tojson }};
+
+    // 1. PRODUCTO (VERTICAL AHORA)
     new Chart(document.getElementById("chartProducto"), {
         type: "bar",
         data: {
             labels: invProducto.map(i => {
-                // extraer solo el nombre después del guion y quitar lo que esté entre paréntesis
                 const partes = i.nombre.split('-');
                 let nombre = partes.length > 1 ? partes[1].trim() : i.nombre;
-                nombre = nombre.replace(/\(.*\)/, '').trim(); // eliminar "(10 x 1.0 L)"
-                return nombre;
+                nombre = nombre.replace(/\(.*\)/, '').trim(); 
+                return nombre.substring(0, 15); // Limitar caracteres para que quepan en vertical
             }),
             datasets: [{
                 label: "Stock Total",
                 data: invProducto.map(i => i.stock_total),
-                backgroundColor: '#FFDCDC',
-                borderColor: '#FF9F9F',
-                borderWidth: 1
+                backgroundColor: 'rgba(201, 108, 77, 0.7)', // Terracota
+                borderRadius: 4
             }]
         },
         options: { 
-            indexAxis: 'y', // gráfico horizontal
             responsive: true,
-            scales: {
-                y: {
-                    ticks: {
-                        maxRotation: 0,
-                        minRotation: 0
-                    }
-                }
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, 
+                x: { grid: { display: false } } 
             }
         }
     });
 
-    /* ================= INVENTARIO POR CATEGORIA ================= */
-    const invCategoria = {{ inv_por_cat | tojson }};
+    // 2. CATEGORÍA (Vertical)
     new Chart(document.getElementById("chartCategoria"), {
         type: "bar",
         data: {
@@ -179,31 +153,37 @@
             datasets: [{
                 label: "Stock Total",
                 data: invCategoria.map(c => c.total_stock),
-                backgroundColor: '#DDF6D2',
-                borderColor: '#6B5B95',
-                borderWidth: 1
+                backgroundColor: 'rgba(106, 154, 226, 0.7)', // Azul claro
+                borderRadius: 4
             }]
         },
-        options: { responsive: true }
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, x: { grid: { display: false } } }
+        }
     });
 
-    /* ================= INVENTARIO POR PROVEEDOR/DONACION ================= */
-    const invProveedor = {{ inv_por_proveedor | tojson }};
+    // 3. PROVEEDOR (Pie)
     new Chart(document.getElementById("chartProveedor"), {
         type: "pie",
         data: {
             labels: invProveedor.map(p => p.tipo),
             datasets: [{
-                label: "Unidades",
                 data: invProveedor.map(p => p.total_unidades),
-                backgroundColor: ['#4CAF50', '#FFC107']
+                backgroundColor: ['#28a745', '#ffc107'],
+                borderWidth: 0
             }]
         },
-        options: { responsive: true }
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } }
+        }
     });
 
-    /* ================= INVENTARIO POR CADUCIDAD ================= */
-    const invCaducidad = {{ inv_por_caducidad | tojson }};
+    // 4. CADUCIDAD (Línea Roja)
     new Chart(document.getElementById("chartCaducidad"), {
         type: "line",
         data: {
@@ -214,19 +194,23 @@
                 return `${mm}/${yy}`;
             }),
             datasets: [{
-                label: "Unidades",
+                label: "Unidades a Caducar",
                 data: invCaducidad.map(c => c.total_unidades),
-                backgroundColor: '#FFE8CD',
-                borderColor: '#FF5722',
+                backgroundColor: 'rgba(255, 59, 48, 0.1)',
+                borderColor: '#ff3b30', // Rojo
                 fill: true,
-                tension: 0.3
+                tension: 0.4
             }]
         },
-        options: { responsive: true }
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, x: { grid: { display: false } } }
+        }
     });
 
-    /* ================= INVENTARIO POR MUNICIPIO ================= */
-    const invMuni = {{ inv_por_muni | tojson }};
+    // 5. MUNICIPIO (Barras Verticales)
     new Chart(document.getElementById("chartMunicipio"), {
         type: "bar",
         data: {
@@ -234,32 +218,39 @@
             datasets: [{
                 label: "Stock Total",
                 data: invMuni.map(m => m.total_stock),
-                backgroundColor: '#F1EAFF',
-                borderColor: '#6B5B95',
-                borderWidth: 1
+                backgroundColor: 'rgba(226, 160, 63, 0.7)', // Ocre
+                borderRadius: 4
             }]
         },
-        options: { responsive: true }
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, x: { grid: { display: false } } }
+        }
     });
 
-    /* ================= INVENTARIO POR COSTE ================= */
-    const invCoste = {{ inv_por_coste | tojson }};
+    // 6. COSTE (Línea Verde)
     new Chart(document.getElementById("chartCoste"), {
         type: "line",
         data: {
             labels: invCoste.map(c => c.fecha),
             datasets: [{
-                label: "Gasto Total",
+                label: "Gasto Total (€)",
                 data: invCoste.map(c => c.total_gasto),
-                backgroundColor: '#DDF6D2',
-                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderColor: '#28a745', // Verde Dinero
                 fill: true,
-                tension: 0.3
+                tension: 0.4
             }]
         },
-        options: { responsive: true }
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, x: { grid: { display: false } } }
+        }
     });
 </script>
 
-</body>
-</html>
+{% endblock %}
