@@ -15,19 +15,23 @@ import random
 import onnxruntime as ort
 import numpy as np
 
+# leer el .env
+load_dotenv()
 
-load_dotenv() #leer el .env
-
+# guardar las variables de entorno
 api_key = os.getenv("COHERE_API_KEY")
 user = os.getenv("MONGO_USERNAME")
 pw = os.getenv("PASSWORD")
 
+# conectar con Cohere
 co = cohere.ClientV2(api_key=api_key)
 
 app = Flask(__name__)
 
+# función que genera una donación con Cohere
 def get_donation():
 
+    # prompt detallado para instruir a cohere
     prompt = """
     Eres un sistema de generación de donaciones para un comedor social.
 
@@ -318,6 +322,7 @@ def get_donation():
     RESPONDE SOLO CON EL DICCIONARIO.
     """
 
+    # envío del prompt a la ia y guardado de su respuesta
     response = co.chat(
     model="command-a-03-2025",
     messages=[{
@@ -332,16 +337,17 @@ def get_donation():
     return json.loads(response.message.content[0].text)
 
 
-# Cargar el modelo ONNX
+# carga del modelo ONNX
 onnx_session = ort.InferenceSession(
     r"modelo\boosting_comedor.onnx",
     providers=["CPUExecutionProvider"]
 )
 
-# Tomamos el primer input y la primera salida del modelo ONNX
+# se toma el primer input y la primera salida del modelo ONNX
 onnx_input_name = onnx_session.get_inputs()[0].name
 onnx_output_name = onnx_session.get_outputs()[0].name
 
+# mapeo de la variable demanda
 LABEL_TO_DEMAND = {
     1: "Muy baja",
     2: "Baja",
@@ -350,18 +356,22 @@ LABEL_TO_DEMAND = {
     5: "Crítica"
 }
 
-#Creamos la función para conectar a la base de datos
+# función para conectar a la base de datos MongoDB
 def get_db():
 
+    # guardado de usuario y contraseña
     username = quote_plus(user)
     password = quote_plus(pw)
 
+    # definición de la uri de mongo
     uri = f"mongodb+srv://{username}:{password}@clustersanti.etewqjo.mongodb.net/?appName=ClusterSanti"
     
+    # configuración del cliente
     client = MongoClient(uri, server_api=ServerApi('1'))
 
     try:
 
+        # lanzamos un 'ping' para asegurar que la conexión es real
         client.admin.command('ping')
 
         print("Conexión con MongoDB exitosa")
@@ -376,26 +386,30 @@ def get_db():
 
 db = None
 
+# conversión de string a datetime
 def parse_date(s):
 
             if not s:
 
                 return None
             try:
-                
+                # conversión a formato ISO
                 return datetime.fromisoformat(s)
             
             except Exception:
 
                 try:
+                    # conversión a formato corto
                     return datetime.strptime(s, '%Y-%m-%d')
                 
                 except Exception:
 
                     return None
-                
+
+# función para generar alertas               
 def generar_alerta():
 
+    # definición de las colecciones a usar
     collection_alert = db['Alertas']
     collection_inv = db['Inventario']
     collection_don = db['Donaciones']
@@ -403,24 +417,28 @@ def generar_alerta():
 
     inventario = collection_inv.find()
     existente_docs = list(collection_alert.find({}))
+
+
     try:
         ignored_docs = list(db['AlertasIgnoradas'].find({}))
     except Exception:
         ignored_docs = []
+
     donaciones = collection_don.find()
 
-    # build sets of existing referenced ids to avoid duplicate alerts
+    # construcción de sets de referencias id existentes para evitar alertas duplicadas
     existing_inventario_ids = set([a.get('inventario_id') for a in existente_docs if a.get('inventario_id') is not None])
     existing_donacion_ids = set([a.get('donacion_id') for a in existente_docs if a.get('donacion_id') is not None])
 
-    # ignored references (user-suppressed)
+    # ignorar las referencias de id
     ignored_inventario_ids = set([d.get('ref_id') for d in ignored_docs if d.get('tipo') == 'inventario' and d.get('ref_id') is not None])
     ignored_donacion_ids = set([d.get('ref_id') for d in ignored_docs if d.get('tipo') == 'donacion' and d.get('ref_id') is not None])
 
     for item in inventario:
-
+        # si no hay stock o queda 1 en sotck y el producto no está en ninguna lista (de ids)
         if item.get('stock_total', 0) <= item.get('minimo_alerta', 1) and item.get('_id') not in existing_inventario_ids and item.get('_id') not in ignored_inventario_ids:
 
+            # se crea y guarda una alerta en la lista de alertas
             alerta = {
                 'inventario_id': item.get('_id'),
                 'producto': item.get('producto'),
@@ -432,24 +450,28 @@ def generar_alerta():
 
             alertas.append(alerta)
 
-        # comprobar próxima caducidad dentro de los próximos 7 días (manejar tipos date/datetime/strings)
+        # comprobar la próxima caducidad dentro de los próximos 7 días (manejar tipos date/datetime/strings)
         pd_raw = item.get('proxima_caducidad')
 
         pd_dt = None
 
+        # normalización de pd_raw para asegurar que pd_dt sea datetime
         if pd_raw:
-
+            # de string a datetime
             if isinstance(pd_raw, str):
                 pd_dt = parse_date(pd_raw)
-
+            # ya es datetime
             elif isinstance(pd_raw, datetime):
                 pd_dt = pd_raw
-
+            # de date (sin hora) a datetime
             elif isinstance(pd_raw, date):
                 pd_dt = datetime(pd_raw.year, pd_raw.month, pd_raw.day)
 
         if pd_dt:
+
             pd_date = pd_dt.date()
+            # comprobación de la caducidad del producto (entre hoy y los próximos 7 días)
+            # y que la alerta no este activa
             if datetime.utcnow().date() <= pd_date <= (datetime.utcnow().date() + timedelta(days=7)) and item.get('_id') not in existing_inventario_ids and item.get('_id') not in ignored_inventario_ids:
                 alerta = {
                     'inventario_id': item.get('_id'),
@@ -460,6 +482,7 @@ def generar_alerta():
                 }
                 alertas.append(alerta)
 
+    # genración de notificaciones para las donaciones entrantes y no procesadas
     for don in donaciones:
         if don.get('_id') not in existing_donacion_ids and don.get('_id') not in ignored_donacion_ids:
             alerta = {
@@ -472,32 +495,36 @@ def generar_alerta():
             }
             alertas.append(alerta)
 
+    # si se ha generado alguna alerta las insertamos
     if alertas:
         try:
             collection_alert.insert_many(alertas)
         except Exception:
-            # insertion may fail; ignore to avoid crash
+            # si la insercción falla
             pass
 
-                
+# función para procesar donaciones
 def process_donation(donation):
 
+    # colecciones a usar
     collection_inv = db['Inventario']
     collection_don = db['Donaciones']
 
+    # información del producto, lote y donante de la donación a procesar
     producto_info = donation.get('producto', {})
     lote_info = donation.get('lote', {})
     donante_info = donation.get('donante', {})
 
     codigo = producto_info.get('Codigo_municipio')
 
+    # chequeo de si el producto está ya en el inventario de ese municipio
     query = {'producto': producto_info.get('producto')}
-
     if codigo:
         query['Codigo_municipio'] = int(codigo)
 
     existing = collection_inv.find_one(query)
 
+    # obtención de la información del lote (ponemos valores por defecto por si faltan datos)
     fecha_entrada = parse_date(lote_info.get('fecha_entrada')) or datetime.utcnow()
     fecha_cad = parse_date(lote_info.get('fecha_caducidad')) or (datetime.utcnow().date() + timedelta(days=30)).isoformat()
     unidades = int(lote_info.get('unidades', 0) or 0)
@@ -507,12 +534,14 @@ def process_donation(donation):
     month = fecha_entrada.month
     lote_num = 1
 
+    # generación de un id de lote 
     if existing and existing.get('lotes'):
         lote_num = len(existing.get('lotes', [])) + 1
 
     prod_short = (producto_info.get('producto') or 'ITEM').split()[0].upper()
     lote_id = lote_info.get('lote_id') or f"LOT-{month}-{year}-{prod_short}-{lote_num}"
 
+    # información del lote a guardar
     lote_doc = {
         'lote_id': lote_id,
         'fecha_entrada': fecha_entrada,
@@ -523,9 +552,11 @@ def process_donation(donation):
     }
 
     if existing:
+        # si el producto existe actualizamos su stock y se añade al lote
         new_stock = existing.get('stock_total', 0) + unidades
         new_coste = existing.get('coste_total', 0.0) + coste
 
+        # recálculo de su caducidad
         caducidades = [l.get('fecha_caducidad') for l in existing.get('lotes', []) if l.get('fecha_caducidad')]
 
         if fecha_cad:
@@ -533,6 +564,7 @@ def process_donation(donation):
 
         proxima = min(caducidades) if caducidades else None
 
+        # adición del nuevo lote
         collection_inv.update_one(
             {'_id': existing.get('_id')},
             {
@@ -549,6 +581,7 @@ def process_donation(donation):
         inv_id = existing.get('_id')
 
     else:
+        # si el producto no existe lo creamos
         new_doc = {
             'nombre': f"{producto_info.get('categoria','')} - {producto_info.get('producto','')} {producto_info.get('variante','')} ({producto_info.get('formato',{}).get('multipack',1)} x {producto_info.get('formato',{}).get('cantidad',0)}{producto_info.get('formato',{}).get('unidad','')})",
             'categoria': producto_info.get('categoria'),
@@ -569,7 +602,7 @@ def process_donation(donation):
         res = collection_inv.insert_one(new_doc)
         inv_id = res.inserted_id
 
-    # insert donation record
+    # inserción de la donación
     donation_record = {
         'producto': producto_info,
         'lote': lote_doc,
@@ -583,12 +616,13 @@ def process_donation(donation):
 
     return donation_record
 
+# función que simula la entrada de una donación nueva
 def simulate_donation_from_inventory():
-
+    # colección a usar
     collection_inv = db['Inventario']
 
     try:
-
+        # agregación de Mongo
         doc = collection_inv.aggregate([{'$sample': {'size': 1}}])
         doc = list(doc)
 
@@ -599,7 +633,7 @@ def simulate_donation_from_inventory():
         item = doc[0]
 
     except Exception:
-
+        # se selecciona un item random si algo falla
         items = list(collection_inv.find({}))
 
         if not items:
@@ -608,11 +642,13 @@ def simulate_donation_from_inventory():
         
         item = random.choice(items)
 
+    # generación de fechas y unidades
     today = datetime.utcnow()
     days = random.randint(30, 365)
     fecha_cad = (today + timedelta(days=days)).date().isoformat()
     unidades = random.randint(1, max(1, int(item.get('formato', {}).get('multipack', 1) * 5)))
 
+    # estructura de la donación
     donation = {
         'producto': {
             'categoria': item.get('categoria'),
@@ -635,6 +671,7 @@ def simulate_donation_from_inventory():
         }
     }
 
+    # relleno con nombres ficticios
     if donation['donante']['tipo'] == 'persona':
         names = ['Ana Garcia','Luis Martínez','María López','Carlos Sánchez','Sonia Ruiz']
         donation['donante']['nombre'] = random.choice(names)
@@ -645,16 +682,20 @@ def simulate_donation_from_inventory():
 
     return donation
 
+# función para insertar en mongo las predicciones
 def post_mongo(features, demanda):
+    # colección en la que insertar
     collection = db['Predicciones']
+    # código postal en el que insertar
     codigo = features["codigo_postal"]
 
-    # Buscamos en la colección 'Municipios'
+    # búsqueda del código postal en la colección 'Municipios'
     datos_contexto = db["Municipios"].find_one({"Codigo_municipio": int(codigo)})
 
     if datos_contexto is None:
         datos_contexto = {} 
     
+    # predicción a insertar (con la población, renta y paro del municipio)
     doc = {
         "demanda": demanda,
         "codigo_postal": features["codigo_postal"],
@@ -667,25 +708,19 @@ def post_mongo(features, demanda):
     collection.insert_one(doc)
     print("💾 Guardado en Mongo")
 
+# función para predecir la demanda esperada
 def predict_demand(codigo_postal, temperatura):
-    """
-    Busca datos socioeconómicos en Mongo usando el CP, añade la temperatura
-    y ejecuta el modelo ONNX.
-    
-    Returns: 
-        - prediction_str (str): Texto de la predicción (ej: "Alta")
-        - full_features (dict): Diccionario con todos los datos usados (para mostrar en web)
-        - error (str): Mensaje de error si falla algo, o None si todo va bien.
-    """
+
     if db is None:
         return None, None, "Error: Base de datos no conectada."
     
-    # Buscamos en la colección 'Municipios'
+    # búsqueda del código postal en la colección 'Municipios'
     datos_contexto = db["Municipios"].find_one({"Codigo_municipio": int(codigo_postal)})
 
     if not datos_contexto:
         return None, None, f"No se encontraron datos para el CP {codigo_postal}."
     
+    # datos en float a usar para la predicción
     x = np.array([[
         float(temperatura),
         float(datos_contexto.get("Prec_max_invierno", 0)),
@@ -705,23 +740,23 @@ def predict_demand(codigo_postal, temperatura):
         float(datos_contexto.get("Paro_servicios", 0))
     ]], dtype=np.float32)
 
-    # Ejecutar inferencia ONNX
+    # ejecución del modelo ONNX
     outputs = onnx_session.run([onnx_output_name], {onnx_input_name: x})
 
-    # Normalmente la primera salida es la etiqueta predicha
+    # normalmente la primera salida es la etiqueta predicha
     label_int = int(outputs[0][0])
     prediction_str = LABEL_TO_DEMAND.get(label_int, f"desconocida ({label_int})")
     
     return label_int, prediction_str, None
 
-# Función que crea un menú del día usando Cohere
+# función que crea un menú del día usando Cohere
 def ai_chef(inventario, donaciones, demanda):
 
-    # 1. Convertir los diccionarios a STRING (Texto) para que la IA los lea
-    # ensure_ascii=False permite que salgan tildes y ñ correctamente
+    # conversión de los diccionarios a string
     inventario_texto = json.dumps(inventario, indent=2, ensure_ascii=False, default=str)
     donaciones_texto = json.dumps(donaciones, indent=2, ensure_ascii=False)
 
+    # prompt detallado para instruir a la IA
     prompt = f"""Actúa como un Chef Ejecutivo y experto en logística de alimentos para un comedor 
     social benéfico. Tu objetivo es diseñar un menú diario nutritivo, reconfortante y eficiente, 
     minimizando el desperdicio de alimentos.
@@ -768,6 +803,7 @@ def ai_chef(inventario, donaciones, demanda):
     ..."""
 
     try: 
+        # envío del prompt a la ia y guardado de su respuesta
         response = co.chat(
             model="command-r-plus-08-2024",
             messages=[
@@ -786,16 +822,17 @@ def ai_chef(inventario, donaciones, demanda):
         return response.message.content[0].text
 
     except Exception as e:
-        # Si falla (URL inválida, error de Cohere, etc.), imprimimos el error en la consola
+        
         print(f"Error generando el menú: {e}")
-        # Devolvemos None para que la app sepa que falló, pero NO se rompa (Error 500)
         return f"<h3>Ocurrió un error al generar el menú:</h3><p>{str(e)}</p>"
     
-# Función que genera una campaña publicitaria con Cohere
+# función que genera una campaña publicitaria con Cohere
 def ai_campaign(inventario):
 
+    # conversión del diccionario a string
     inventario_texto = json.dumps(inventario, indent=2, ensure_ascii=False, default=str)
 
+    # prompt detallado para la IA
     prompt = f"""Actúa como un Director de Marketing experto en campañas sociales y ONGs.
     Tu objetivo es crear una campaña publicitaria de alto impacto para incentivar la donación 
     de una categoría específica de alimentos que es crítica ahora mismo en nuestro inventario.
@@ -831,54 +868,63 @@ def ai_campaign(inventario):
     {{
         "producto_heroe": "Nombre del producto faltante (ej: Leche)",
         "slogan": "Frase impactante de 5 palabras máximo",
-        "mensaje_principal": "Texto breve (2 frases) explicando que tenemos arroz pero nos falta dignidad/proteína.",
+        "mensaje_principal": "Texto breve (2 frases) explicando el porque es importante que se done el producto faltante.",
         "color_fondo": "Código Hexadecimal que represente la emoción o el producto (ej: #FFFFFF para leche, #FFD700 para aceite)",
         "emoji_icono": "Un solo emoji que represente el producto (ej: 🥛, 🥚, 💧)"
     }}"""
 
-    print("--- 1. Enviando a IA... ---")
-
     try: 
+        # envío del promt a la IA y guardado de su respuesta
         response = co.chat(
             model="command-r-plus-08-2024",
-            messages=[{"role": "user", "content": [{"type": "text", "text": prompt}]}],
+            messages=
+            [
+                {
+                    "role": "user",
+                    "content": 
+                    [
+                        {
+                            "type": "text", 
+                            "text": prompt
+                        }
+                    ]
+                }
+            ],
             response_format={"type": "json_object"} # Forzamos modo JSON
         )
 
         texto_crudo = response.message.content[0].text
-        print(f"--- 2. La IA respondió: ---\n{texto_crudo}\n-------------------------")
 
-        # --- LIMPIEZA DE JSON (CRÍTICO) ---
-        # A veces la IA pone ```json al principio. Lo borramos.
+        # a veces la IA pone ```json al principio, por lo que se elimina
         texto_limpio = texto_crudo.replace("```json", "").replace("```", "").strip()
         
-        # Convertimos el texto a Diccionario Python
+        # conversión del texto a diccionario
         datos_anuncio = json.loads(texto_limpio)
 
         return datos_anuncio
     
     except json.JSONDecodeError as e:
-        print(f"❌ ERROR JSON: La IA no devolvió un JSON válido.\nError: {e}")
-        # Devolvemos el backup para que se vea algo
+        print(f"ERROR JSON: La IA no devolvió un JSON válido.\nError: {e}")
+        # devolvemos un producto para que se vea algo
         return {
             "producto_heroe": "Alimentos Frescos",
-            "slogan": "Error de Formato IA",
-            "mensaje_principal": "La IA devolvió texto plano en vez de JSON. Mira la consola.",
-            "color_fondo": "#FF5733", # Naranja de error
+            "slogan": "Dona fresco, dona mejor",
+            "mensaje_principal": "Los alimentos frescos como la fruta son esenciales para una dieta equilibrada.",
+            "color_fondo": "#FF5733",
             "emoji_icono": "🐛"
         }
         
     except Exception as e:
-        print(f"❌ ERROR GENERAL: {e}")
+        print(f"ERROR GENERAL: {e}")
         return {
             "producto_heroe": "Ayuda General",
             "slogan": "Dona lo que puedas",
-            "mensaje_principal": "Hubo un error de conexión con la IA.",
+            "mensaje_principal": "Cualquier donación es buena, aporta tu grano de arena.",
             "color_fondo": "#4CAF50",
             "emoji_icono": "❤️"
         }
 
-#Antes de que se procese cada petición en la app, nos conectamos a la base de datos
+# antes de que se procese cada petición en la app, nos conectamos a la base de datos
 @app.before_request
 def connect_db():
 
@@ -888,41 +934,40 @@ def connect_db():
         
         db = get_db()
 
+# ruta principal
 @app.route('/')
 def index():
-
+    # conteo de alertas para las notificaciones
     collection_alert = db['Alertas']
-
     total_alertas = collection_alert.count_documents({})
 
+    # simulación de donación cada vez que se carga el home
     choice =  random.randint(0, 1)
-
     if choice == 1:
 
         try:
-
+            # obtención de una donación real (si la hay)
             record = get_donation()
         
         except Exception:
-            
+            # simulamos la donación si no hay una real
             record = simulate_donation_from_inventory()
 
     else:
-
+        # simulamos una donación
         record = simulate_donation_from_inventory()
 
+    # procesado de la donación y generación de alerta
     process_donation(record)
-
     generar_alerta()
 
     return render_template('index.html', total_alertas=total_alertas)
 
-
+# ruta para las donaciones
 @app.route('/donacion', methods=['GET'])
 def donacion():
-
+    # listamos todas las donaciones y las devolvemos
     collection = db['Donaciones']
-
     donations = list(collection.find({}))
 
     if not donations:
@@ -933,6 +978,7 @@ def donacion():
 
     return render_template('donaciones.html', donations=donations)
 
+# ruta para el inventario
 @app.route('/inventario', methods=['GET', 'POST'])
 def inventario():
 
@@ -940,9 +986,8 @@ def inventario():
     
     selected_codigo = request.values.get('codigo', '')
 
-    # load municipios collection to populate selector
+    # carga de los municipios para rellenas el selector del html
     municipios = []
-
     try:
         municipios_col = db['Municipios']
 
@@ -959,7 +1004,7 @@ def inventario():
     except Exception:
         municipios = []
 
-    # if a postal code is selected, show only items for that municipio
+    # si hay código postal, se muestran unos pocos items para el municipio
     if selected_codigo:
 
         items = list(collection.find({'Codigo_municipio': int(selected_codigo)}))
@@ -972,11 +1017,13 @@ def inventario():
 
     return render_template('inventario.html', items=items, municipios=municipios, selected_codigo=selected_codigo)
 
+# ruta para crear un producto en el inventario
 @app.route('/inventario/crear_producto', methods=['GET', 'POST'])
 def crear_producto():
 
     collection = db['Inventario']
 
+    # categorías a las que puede pertenecer el producto
     types_categories = {
 
         "CONSERVAS": ["en agua",
@@ -1047,13 +1094,11 @@ def crear_producto():
     }
 
     categories = list(types_categories.keys())
-
     units = ['g', 'kg', 'ml', 'L']
 
+    # guardar los filtros si hay
     category = request.values.get('category', '')
-
     unit = request.values.get('unit', '')
-
     type_category = types_categories.get(category, []) if category else []
 
     # obtener lista de municipios para el selector
@@ -1069,12 +1114,13 @@ def crear_producto():
     except Exception:
         municipios = []
 
+
     if request.method == 'POST':
-
+        # obtención del nombre y variante del producto
         item_name = request.form.get('item_name', '').strip()
-
         variante = request.form.get('variante', '').strip()
 
+        # conversión a string
         try:
             multipack = int(request.form.get('multipack', 1))
         except (ValueError, TypeError):
@@ -1087,6 +1133,7 @@ def crear_producto():
 
         formato_unidad = request.form.get('formato_unidad', unit or request.form.get('formato_unidad', '')).strip()
 
+        # gestión de las fechas
         fecha_entrada_raw = request.form.get('fecha_entrada', '').strip()
         fecha_cad_raw = request.form.get('fecha_caducidad', '').strip()
 
@@ -1106,8 +1153,8 @@ def crear_producto():
         year = fecha_entrada.year if fecha_entrada else 'XXXX'
         month = fecha_entrada.month if fecha_entrada else 'XX'
 
+        # verificación de la existencia de los lotes para el producto
         existing = collection.find_one({'producto': item_name})
-
         if not existing or not existing.get('lotes'):
             lote_num = 1
         else:
@@ -1117,6 +1164,7 @@ def crear_producto():
 
         lotes = []
 
+        # creación del lote
         if lote_id or lote_unidades or fecha_entrada or fecha_caducidad:
 
             lote_doc = {
@@ -1129,11 +1177,11 @@ def crear_producto():
 
             lotes.append(lote_doc)
 
-        
+        # cálculo del stock total
         stock_total = sum([l.get('unidades', 0) for l in lotes])
 
+        # cálculo de la fecha de caducidad mínima
         cad_dates = [l.get('fecha_caducidad') for l in lotes if l.get('fecha_caducidad')]
-
         proxima_caducidad = min(cad_dates) if cad_dates else None
 
         coste_total = sum([l.get('coste', 0.0) for l in lotes])
@@ -1142,7 +1190,7 @@ def crear_producto():
 
         codigo_municipio = request.form.get('codigo_municipio') or request.values.get('codigo') or None
 
-        # fallback: try to extract `codigo` from Referer querystring if not provided
+        # fallback: si no hay cp se intenta leer del referer
         if not codigo_municipio:
             ref = request.headers.get('Referer') or request.referrer
             if ref:
@@ -1154,11 +1202,12 @@ def crear_producto():
                 except Exception:
                     pass
 
-        # validate municipio provided
+        # validación del municipio dado
         if not codigo_municipio:
             error = 'Debe seleccionar un Código postal / Municipio antes de crear el producto.'
             return render_template('crear_item.html', categories=categories, type_category=type_category, selected_category=category, units=units, selected_unit=unit, municipios=municipios, selected_codigo='', error_message=error)
 
+        # crear el producto
         new_doc = {
             'nombre': nombre,
             'categoria': category,
@@ -1188,18 +1237,19 @@ def crear_producto():
     selected_codigo = request.values.get('codigo', '')
     return render_template('crear_item.html', categories=categories, type_category=type_category, selected_category=category, units=units, selected_unit=unit, selected_codigo=selected_codigo, municipios=municipios)
 
+# ruta para crear un lote para un producto existente
 @app.route('/inventario/crear_lote/<string:item_id>', methods=['GET', 'POST'])
 def crear_lote(item_id):
 
     collection = db['Inventario']
 
+    # validación de la existencia del producto
     item = collection.find_one({'_id': ObjectId(item_id)})
-
     if not item:
         return f"<h1 style='color:red'>Item no encontrado</h1>"
 
     if request.method == 'POST':
-
+        # obtención de los datos del formulario
         fecha_entrada_raw = request.form.get('fecha_entrada', '').strip()
         fecha_cad_raw = request.form.get('fecha_caducidad', '').strip()
 
@@ -1219,6 +1269,7 @@ def crear_lote(item_id):
         year = fecha_entrada.year if fecha_entrada else 'XXXX'
         month = fecha_entrada.month if fecha_entrada else 'XX'
 
+        # genración del id del lote
         existing = collection.find_one({'_id': ObjectId(item_id)})
 
         if not existing or not existing.get('lotes'):
@@ -1236,16 +1287,14 @@ def crear_lote(item_id):
             'coste': coste
         }
 
+        # adición del nuevo coste/stock/caducidad al producto
         coste_total = item.get('coste_total', 0.0) + coste
-
         stock_total = item.get('stock_total', 0) + lote_unidades
-
         caducidad = [l.get('fecha_caducidad') for l in item.get('lotes', []) if l.get('fecha_caducidad')]
 
+        # recálculo de la fecha de caducidad
         if fecha_caducidad:
-
             caducidad.append(fecha_caducidad)
-
         proxima_caducidad = min(caducidad) if caducidad else None
 
         collection.update_one(
@@ -1265,12 +1314,14 @@ def crear_lote(item_id):
 
     return render_template('crear_lote.html', item=item)
 
+# ruta para ver los lotes de un producto
 @app.route('/inventario/ver_lotes/<string:item_id>', methods=['GET'])
 def ver_lotes(item_id):
+
     collection = db['Inventario']
 
+    # comprobación de que el producto existe
     item = collection.find_one({'_id': ObjectId(item_id)})
-
     if not item:
         return f"<h1 style='color:red'>Item no encontrado</h1>"
 
@@ -1278,13 +1329,13 @@ def ver_lotes(item_id):
 
     return render_template('ver_lotes.html', item=item, lotes=lotes)
 
+# ruta para editar los lotes de un producto
 @app.route('/inventario/editar_lote/<string:item_id>', methods=['GET', 'POST'])
 def editar_lote(item_id):
 
     collection = db['Inventario']
 
     item = collection.find_one({'_id': ObjectId(item_id)})
-
     if not item:
         return f"<h1 style='color:red'>Item no encontrado</h1>"
 
@@ -1292,8 +1343,9 @@ def editar_lote(item_id):
 
     if request.method == 'POST':
 
+        # iteración sobre los lotes que existen
         for index, lote in enumerate(lotes):
-
+            # obtención de las fechas por índice
             fecha_entrada_raw = request.form.get(f'fecha_entrada_{index}', '').strip()
             fecha_cad_raw = request.form.get(f'fecha_caducidad_{index}', '').strip()
 
@@ -1310,11 +1362,13 @@ def editar_lote(item_id):
             fecha_entrada = parse_date(fecha_entrada_raw)
             fecha_caducidad = parse_date(fecha_cad_raw)
 
+            # actualización varios campos del lote 
             lotes[index]['fecha_entrada'] = fecha_entrada
             lotes[index]['fecha_caducidad'] = fecha_caducidad
             lotes[index]['unidades'] = lote_unidades
             lotes[index]['coste'] = coste
 
+        # actualizar el lote
         collection.update_one(
             {'_id': ObjectId(item_id)},
             {
@@ -1329,6 +1383,7 @@ def editar_lote(item_id):
 
     return render_template('editar_lote.html', item=item, lotes=lotes)
 
+# ruta para la predicción de demanda
 @app.route('/predict', methods = ["GET", "POST"])
 def predict():
 
@@ -1337,20 +1392,22 @@ def predict():
     error_ms = None
 
     if request.method == "GET":
-        # Mostramos la página vacía, sin procesar nada
+        # mostramos la página vacía, sin procesar nada
         return render_template("predict.html", prediction=None, features=None)
     
+    # obtención del cp/municipio/temperatura
     codigo_postal = request.form.get("codigo_postal")
     municipio = request.form.get("municipio")
     temperatura = request.form.get("temperatura")
 
+    # características a usar
     features = {"codigo_postal": codigo_postal, "temperatura": temperatura, "municipio": municipio}
 
     if not codigo_postal or not temperatura:
         error_ms = "Faltan datos."
 
     else:
-        # Llamada limpia a la lógica
+        # llamada a la función
         label_int, demanda, error_ms = predict_demand(codigo_postal, temperatura)
 
         prediccion = (
@@ -1359,24 +1416,28 @@ def predict():
                 f"Municipio {municipio} y Temperatura {temperatura}."
             )
         
+        # inserción de la predicción en mongo
         post_mongo(features, demanda)
     
     return render_template("predict.html", prediction=prediccion, features=features, error=error_ms)
 
+# ruta para ver el historial
 @app.route('/history', methods = ["GET"])
 def history():
 
     if db is None:
         return "Error: Base de datos no conectada"
     
-    # ordenar registros de 'predicciones'
+    # ordenar los registros de 'predicciones'
     registros = list(db['Predicciones'].find({}).sort("codigo_postal",1))
+    
     return render_template("history.html", records=registros)
 
+# ruta para ver las alertas
 @app.route('/alertas', methods = ["GET"])
 def alertas():
 
-    # (re)generate alerts first so the list is up-to-date
+    # (re)generar las alertas primero para que la lista este actualizada
     generar_alerta()
 
     registros = list(db['Alertas'].find({}).sort("generado_en", -1))
@@ -1385,7 +1446,7 @@ def alertas():
 
     return render_template("alertas.html", records=registros)
 
-
+# ruta para eliminar una alerta 
 @app.route('/alertas/delete/<string:alert_id>', methods=['POST'])
 def delete_alert(alert_id):
 
@@ -1395,18 +1456,20 @@ def delete_alert(alert_id):
     try:
         alert_doc = collection_alert.find_one({'_id': ObjectId(alert_id)})
         if alert_doc:
-            # record suppression so the alert isn't re-created
+            # guardado de la eliminación para que la alerta no se recree
             if alert_doc.get('donacion_id'):
                 collection_ignored.insert_one({'tipo': 'donacion', 'ref_id': alert_doc.get('donacion_id'), 'created_at': datetime.utcnow()})
             if alert_doc.get('inventario_id'):
                 collection_ignored.insert_one({'tipo': 'inventario', 'ref_id': alert_doc.get('inventario_id'), 'created_at': datetime.utcnow()})
-
+        
+        # eliminación de la alerta
         collection_alert.delete_one({'_id': ObjectId(alert_id)})
     except Exception:
         pass
 
     return redirect(url_for('alertas'))
 
+# ruta para ver las estadísticas
 @app.route('/stats', methods = ["GET"])
 def stats():
     # agregar predicciones por codigo postal
@@ -1457,6 +1520,7 @@ def stats():
 
     return render_template("stats.html", pred_por_cp=pred_por_cp, don_por_muni=don_por_muni, inv_por_prod=inv_por_prod)
 
+# ruta para ver las estadísticas de las donaciones
 @app.route("/stats/donaciones", methods=["GET"])
 def stats_donaciones():
     # agregar donaciones por municipio
@@ -1561,6 +1625,7 @@ def stats_donaciones():
     
     return render_template("stats_donaciones.html", don_por_muni=don_por_muni, don_por_fecha=don_por_fecha, don_por_donante=don_por_donante, don_por_categoria=don_por_categoria, don_por_producto=don_por_producto, don_por_caducidad=don_por_caducidad)
 
+# ruta para ver las estadísticas del inventario
 @app.route("/stats/inventario")
 def stats_inventario():
     # agregar inventario por producto
@@ -1667,6 +1732,7 @@ def stats_inventario():
 
     return render_template("stats_inventario.html", inv_por_prod=inv_por_prod, inv_por_muni=inv_por_muni, inv_por_cat=inv_por_cat, inv_por_coste=inv_por_coste, inv_por_proveedor=inv_por_proveedor, inv_por_caducidad=inv_por_caducidad)
 
+# ruta para ver las estadísticas de las predicciones
 @app.route("/stats/predicciones")
 def stats_predicciones():
     # agregar predicciones por codigo postal
@@ -1784,21 +1850,26 @@ def stats_predicciones():
 
     return render_template("stats_predicciones.html", pred_por_cp=pred_por_cp, pred_por_tipo=pred_por_tipo, pred_renta_demanda=pred_renta_demanda, pred_hab_muni=pred_hab_muni, pred_renta_muni=pred_renta_muni, pred_paro_muni=pred_paro_muni)
 
+# ruta para generar menú
 @app.route('/chef', methods = ["GET", "POST"])
 def chef():
 
     menu = None
 
+    # para método GET devolvemos el html vacío
     if request.method == 'GET':
         return render_template('chef.html', inventario=None, donaciones=None, demanda=None, menu=menu)
     
+    # obtención del cp
     codigo = request.form.get("codigo_postal")
     
     if not codigo:
         return render_template("chef.html", menu="<h3>Error:</h3><p>Introduce un código postal.</p>")
     
+    # obtención del inventario/donaciones/demanda para el cp
     inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
     donaciones = list(db['Donaciones'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
+    # usar la última predicción de la demanda
     prediccion = db['Predicciones'].find_one(
                 {"Codigo_municipio": int(codigo)}, 
                 sort=[('_id', -1)])
@@ -1808,25 +1879,28 @@ def chef():
     else:
         demanda = 'Normal'
 
-    # usar ultima prediccion para igualarlo a la demanda
     menu = ai_chef(inventario, donaciones, demanda)
 
     return render_template("chef.html", menu=menu)
 
+# ruta para generar el anuncio
 @app.route('/anuncio', methods=['GET', 'POST'])
 def anuncio():
 
     campaign = None
     error_msg = None
 
+    # para método GET devolvemos el html vacío
     if request.method == 'GET':
         return render_template('anuncio.html', anuncio=campaign)
     
+    # obtención del cp
     codigo = request.form.get("codigo_postal")
     
     if not codigo:
         return render_template("chef.html", menu="<h3>Error:</h3><p>Introduce un código postal.</p>")
     
+    # obtención del inventario para el cp
     inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
     
     if not inventario:
