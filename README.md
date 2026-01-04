@@ -83,7 +83,12 @@ Se construye mediante un **ETL de CSVs** sacados de diferentes fuentes de datos 
 
 ```text
 .
+comedores-sociales-valencia/
+│
 ├── app.py
+├── requirements.txt
+├── ETL.ipynb
+├── README.md
 ├── modelo/
 │   ├── boosting_comedor.onnx
 │   ├── comedor_metadata.json
@@ -108,16 +113,13 @@ Se construye mediante un **ETL de CSVs** sacados de diferentes fuentes de datos 
 │   ├── stats_predicciones.html
 │   ├── stats.html
 │   └── ver_lotes.html
-├── data_vlc/
-│   ├── FINAL_DATASET_V2.csv
-│   ├── FINAL_DATASET.csv
-│   ├── municipios_calidad_vida.csv
-│   ├── municipios_con_invierno.csv
-│   ├── MUNICIPIOS.csv
-│   ├── paro_por_municipios.csv
-│   ├── part-00000-74c76527-0545-4ecc-abea-8be1009b86a8-c000.csv
-│   ├── Poblacion_municipal.csv
-│   └── Renta_media.csv
-├── ETL.ipynb
-├── requirements.txt
-└── README.md
+└── data_vlc/
+    ├── FINAL_DATASET_V2.csv
+    ├── FINAL_DATASET.csv
+    ├── municipios_calidad_vida.csv
+    ├── municipios_con_invierno.csv
+    ├── MUNICIPIOS.csv
+    ├── paro_por_municipios.csv
+    ├── part-00000-74c76527-0545-4ecc-abea-8be1009b86a8-c000.csv
+    ├── Poblacion_municipal.csv
+    └── Renta_media.csv

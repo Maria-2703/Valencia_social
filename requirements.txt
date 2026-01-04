@@ -1,0 +1,30 @@
+# Web framework
+Flask
+
+# Database
+pymongo
+dnspython
+
+# Data processing
+pandas
+numpy
+python-dateutil
+
+# Machine Learning / ONNX
+scikit-learn
+onnx
+onnxruntime
+
+# ETL / Big Data
+pyspark
+meteostat
+
+# AI Generative
+cohere
+
+# Visualization
+matplotlib
+seaborn
+
+# Utilities
+requests
