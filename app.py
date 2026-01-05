@@ -340,7 +340,7 @@ def get_donation():
 
 # carga del modelo ONNX
 onnx_session = ort.InferenceSession(
-    r"modelo\boosting_comedor.onnx",
+    "modelo/boosting_comedor.onnx",
     providers=["CPUExecutionProvider"]
 )
 
