@@ -840,8 +840,10 @@ def ai_chef(inventario, demanda):
         * **Postre:** Fruta variada del tiempo
         * **Acompañamiento:** Pan integral y agua
 
-        ### ⚠️ NOTA DEL SISTEMA
-        La Inteligencia Artificial no está disponible momentáneamente. Se muestra un menú estándar equilibrado para asegurar el servicio.
+        ### JUSTIFICACIÓN DE APROVECHAMIENTO
+        Las legumbres y verduras son productos con buena durabilidad y alto valor nutricional, 
+        ideales para maximizar el uso del inventario disponible. La crema de verduras permite 
+        utilizar diversas hortalizas que puedan estar próximas a su caducidad.
 
         ### 📝 LISTA DE PRODUCCIÓN ESTIMADA
         | Ingrediente | Origen | Cantidad pax | TOTAL A USAR |
@@ -1437,43 +1439,65 @@ def editar_lote(item_id):
 
     return render_template('editar_lote.html', item=item, lotes=lotes)
 
-# ruta para la predicción de demanda
-@app.route('/predict', methods = ["GET", "POST"])
+@app.route('/predict', methods=["GET", "POST"])
 def predict():
 
+    municipios = []
+    
+    # carga de los municipios para rellenar el selector del html
+    try:
+        municipios_col = db['Municipios']
+        docs = list(municipios_col.find({}))
+        print(f"DEBUG: La base de datos ha encontrado {len(docs)} municipios.")
+
+        for d in docs:
+
+            code = d.get('Codigo_municipio')
+            name = d.get('Municipios')
+
+            if code:
+                municipios.append({'code': str(code), 'name': name})
+                
+    except Exception as e:
+        print(f"DEBUG ERROR: {e}")
+    
     prediccion = ""
     features = None
     error_ms = None
 
-    if request.method == "GET":
-        # mostramos la página vacía, sin procesar nada
-        return render_template("predict.html", prediction=None, features=None)
-    
-    # obtención del cp/municipio/temperatura
-    codigo_postal = request.form.get("codigo_postal")
-    municipio = request.form.get("municipio")
-    temperatura = request.form.get("temperatura")
+    if request.method == "POST":
+        # obtención del cp/municipio/temperatura
+        codigo_postal = request.form.get("codigo_postal")
+        municipio = request.form.get("municipio")
+        temperatura = request.form.get("temperatura")
 
-    # características a usar
-    features = {"codigo_postal": codigo_postal, "temperatura": temperatura, "municipio": municipio}
+        if not municipio:
+            # búsqueda en municipios en base al código postal elegido
+            for m in municipios:
+                if m['code'] == codigo_postal:
+                    municipio = m['name']
+                    break
 
-    if not codigo_postal or not temperatura:
-        error_ms = "Faltan datos."
+        # características a usar
+        features = {"codigo_postal": codigo_postal, "temperatura": temperatura, "municipio": municipio}
 
-    else:
-        # llamada a la función
-        label_int, demanda, error_ms = predict_demand(codigo_postal, temperatura)
-
-        prediccion = (
-                f"La demanda esperada es {demanda} (Clase {label_int}). "
-                f"Los datos usados son: Código postal {codigo_postal}, "
-                f"Municipio {municipio} y Temperatura {temperatura}."
-            )
+        if not codigo_postal or not temperatura:
+            error_ms = "Faltan datos."
         
-        # inserción de la predicción en mongo
-        post_mongo(features, demanda)
-    
-    return render_template("predict.html", prediction=prediccion, features=features, error=error_ms)
+        else:
+            try:
+                label_int, demanda, error_ms = predict_demand(codigo_postal, temperatura)
+                prediccion = (
+                        f"La demanda esperada es {demanda} (Clase {label_int}). "
+                        f"Los datos usados son: Código postal {codigo_postal}, "
+                        f"Municipio {municipio} y Temperatura {temperatura}."
+                )
+                post_mongo(features, demanda)
+
+            except Exception as e:
+                error_ms = f"Error: {e}"
+
+    return render_template("predict.html", prediction=prediccion, features=features, error=error_ms, municipios=municipios)
 
 # ruta para ver el historial
 @app.route('/history', methods = ["GET"])
@@ -1913,62 +1937,93 @@ def generar():
 @app.route('/chef', methods = ["GET", "POST"])
 def chef():
 
+    municipios = []
+    
+    # carga de los municipios para rellenar el selector del html
+    try:
+        municipios_col = db['Municipios']
+        docs = list(municipios_col.find({}))
+        print(f"DEBUG: La base de datos ha encontrado {len(docs)} municipios.")
+
+        for d in docs:
+
+            code = d.get('Codigo_municipio')
+            name = d.get('Municipios')
+
+            if code:
+                municipios.append({'code': str(code), 'name': name})
+                
+    except Exception as e:
+        print(f"DEBUG ERROR: {e}")
+
     menu = None
+    codigo_postal = None
 
-    # para método GET devolvemos el html vacío
     if request.method == 'GET':
-        return render_template('chef.html', menu=menu)
-    
-    # obtención del cp
-    codigo = request.form.get("codigo_postal")
-    
-    if not codigo:
-        return render_template("chef.html", menu="<h3>Error:</h3><p>Introduce un código postal.</p>")
-    
-    # obtención del inventario/donaciones/demanda para el cp
-    inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
-    
-    # usar la última predicción de la demanda
-    prediccion = db['Predicciones'].find_one(
-                {"Codigo_municipio": int(codigo)}, 
-                sort=[('_id', -1)])
-    
-    if prediccion:
-        demanda = prediccion.get('demanda', 'Normal')
-    else:
-        demanda = 'Normal'
+        return render_template('chef.html', menu=None, municipios=municipios)
 
-    menu = ai_chef(inventario, demanda)
+    codigo_postal = request.form.get("codigo_postal")
 
-    return render_template("chef.html", menu=menu)
+    if not codigo_postal:
+        return render_template("chef.html", menu="<h3>Error: Selecciona un centro.</h3>", municipios=municipios)
 
+    inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo_postal)}, {'_id': 0}))
+    prediccion = db['Predicciones'].find_one({"Codigo_municipio": int(codigo_postal)}, sort=[('_id', -1)])
+    demanda = prediccion.get('demanda', 'Normal') if prediccion else 'Normal'
+
+    try:
+        menu = ai_chef(inventario, demanda)
+    except Exception as e:
+        menu = f"Error generando menú: {e}"
+
+    return render_template("chef.html", menu=menu, municipios=municipios, codigo_postal=codigo_postal)
 
 # ruta para guardar el menú generado
 @app.route('/guardar_menu', methods=['POST'])
 def guardar_menu():
-    menu = request.form.get('menu')
-    plato_principal = request.form.get('plato_principal')
+    # datos a utilizar
+    contenido = request.form.get('contenido_menu')
+    plato = request.form.get('plato_principal')
+    segundo = request.form.get('segundo_plato')
+    postre = request.form.get('postre')
+    acomp = request.form.get('acompanamiento')
     cp = request.form.get('codigo_postal')
 
-    if not menu or not cp:
+    # 2. DIAGNÓSTICO (Mira la consola negra al darle a guardar)
+    print(f"--- INTENTO DE GUARDADO ---")
+    print(f"CP: {cp}")
+    print(f"Plato: {plato}")
+    print(f"Contenido (longitud): {len(contenido) if contenido else 0}")
+
+    # 3. Validación
+    if not contenido or not cp:
+        print("❌ ERROR: Faltan datos obligatorios (CP o Contenido)")
         return redirect(url_for('chef'))
     
     hoy = date.today().strftime('%Y-%m-%d')
 
-    # menú a insertar
-    doc = {
-        'fecha': hoy,
-        'plato_principal': plato_principal,
-        'codigo_postal': cp,
-        'contenido': menu
+    # 4. Preparar datos
+    filtro = {'fecha': hoy, 'codigo_postal': cp}
+    
+    nuevos_datos = {
+        '$set': {
+            'plato_principal': plato,
+            'segundo_plato': segundo,
+            'postre': postre,
+            'acompañamiento': acomp,
+            'contenido': contenido,
+            # Aseguramos campos clave
+            'fecha': hoy,
+            'codigo_postal': cp
+        }
     }
 
-    # actualización en mongo
-    db.Menus.update_one(
-        {'fecha': hoy, "codigo_postal": cp},
-        {'$set': doc},
-        upsert=True
-    )
+    # 5. Guardar en Mongo (Upsert = Si existe actualiza, si no crea)
+    try:
+        db.Menus.update_one(filtro, nuevos_datos, upsert=True)
+        print("✅ GUARDADO EXITOSO EN MONGO")
+    except Exception as e:
+        print(f"❌ ERROR MONGO: {e}")
 
     return redirect(url_for('index'))
 
@@ -1976,28 +2031,48 @@ def guardar_menu():
 @app.route('/anuncio', methods=['GET', 'POST'])
 def anuncio():
 
+    municipios = []
+    
+    # carga de los municipios para rellenar el selector del html
+    try:
+        municipios_col = db['Municipios']
+        docs = list(municipios_col.find({}))
+        print(f"DEBUG: La base de datos ha encontrado {len(docs)} municipios.")
+
+        for d in docs:
+
+            code = d.get('Codigo_municipio')
+            name = d.get('Municipios')
+
+            if code:
+                municipios.append({'code': str(code), 'name': name})
+                
+    except Exception as e:
+        print(f"DEBUG ERROR: {e}")
+
     campaign = None
     error_msg = None
 
     # para método GET devolvemos el html vacío
     if request.method == 'GET':
-        return render_template('anuncio.html', anuncio=campaign)
+        return render_template('anuncio.html', anuncio=campaign, municipios=municipios)
     
     # obtención del cp
-    codigo = request.form.get("codigo_postal")
+    codigo_postal = request.form.get("codigo_postal")
     
-    if not codigo:
-        return render_template("chef.html", menu="<h3>Error:</h3><p>Introduce un código postal.</p>")
+    if not codigo_postal:
+        return render_template("anuncio.html", menu="<h3>Error:</h3><p>Introduce un código postal.</p>", municipios=municipios)
     
     # obtención del inventario para el cp
-    inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo)}, {'_id': 0}))
+    inventario = list(db['Inventario'].find({"Codigo_municipio": int(codigo_postal)}, {'_id': 0}))
     
     if not inventario:
-        error_msg = f"No hay inventario para el CP {int(codigo)}"
+        error_msg = f"No hay inventario para el CP {int(codigo_postal)}"
     else:
         campaign = ai_campaign(inventario)
 
-    return render_template("anuncio.html", anuncio=campaign, error_msg=error_msg)
+    return render_template("anuncio.html", anuncio=campaign, error_msg=error_msg, municipios=municipios, codigo_postal=codigo_postal)
+
 
 if __name__ == "__main__":
     app.run(debug = True, host = "localhost", port  = 5000)

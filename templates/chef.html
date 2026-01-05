@@ -6,82 +6,31 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-    /* --- ESTILOS GENERALES --- */
-    .chef-hero {
-        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-        padding: 40px 0;
-        border-bottom: 1px solid #e0e0e0;
-        margin-bottom: 30px;
-    }
-
-    .chef-card {
-        background: white;
-        border: 0;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-
+    /* Estilos Chef */
+    .chef-hero { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 40px 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 30px; }
+    .chef-card { background: white; border: 0; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; }
     .input-group-text { background-color: white; border-right: 0; }
-    .form-control-lg { border-left: 0; }
-    .form-control-lg:focus { box-shadow: none; border-color: #ced4da; }
+    .form-control-lg, .form-select-lg { border-left: 0; }
+    .form-control-lg:focus, .form-select-lg:focus { box-shadow: none; border-color: #ced4da; }
 
-    /* --- ESTILOS DEL MENÚ GENERADO --- */
-    .menu-result {
-        padding: 40px;
-        background-color: #fff;
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        line-height: 1.8;
-        font-size: 1.05rem;
-    }
-    .menu-result h1, .menu-result h2 {
-        color: var(--secondary-color);
-        font-family: 'Playfair Display', serif;
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 10px;
-        margin-top: 30px;
-        margin-bottom: 20px;
-    }
-    .menu-result h3 {
-        color: var(--primary-color);
-        font-weight: bold;
-        margin-top: 25px;
-        text-transform: uppercase;
-        font-size: 1.1rem;
-        letter-spacing: 0.5px;
-    }
-    .menu-result ul, .menu-result ol { padding-left: 20px; margin-bottom: 20px; }
-    .menu-result li { margin-bottom: 8px; }
-    .menu-result strong { color: #333; font-weight: 700; }
-    .menu-result table {
-        width: 100%; border-collapse: separate; border-spacing: 0;
-        margin: 25px 0; border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0;
-    }
-    .menu-result th { background-color: var(--secondary-color); color: white; padding: 15px; text-align: left; font-weight: 600; }
+    /* Estilos Menú */
+    .menu-result { padding: 40px; background-color: #fff; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.05rem; }
+    .menu-result h1, .menu-result h2 { color: var(--secondary-color); font-family: 'Playfair Display', serif; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; }
+    .menu-result h3 { color: var(--primary-color); font-weight: bold; margin-top: 25px; text-transform: uppercase; font-size: 1.1rem; letter-spacing: 0.5px; }
+    .menu-result table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 25px 0; border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0; }
+    .menu-result th { background-color: var(--secondary-color); color: white; padding: 15px; text-align: left; }
     .menu-result td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; color: #555; }
-    .menu-result tr:last-child td { border-bottom: none; }
-    .menu-result tr:nth-child(even) { background-color: #fcfcfc; }
-
+    
     /* Loader */
     .loading-container { display: none; text-align: center; padding: 40px; }
-    .spinner-chef {
-        width: 60px; height: 60px; border: 5px solid #f3f3f3;
-        border-top: 5px solid var(--primary-color); border-radius: 50%;
-        animation: spin 1s linear infinite; margin: 0 auto 20px auto;
-    }
+    .spinner-chef { width: 60px; height: 60px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* --- ESTILOS DE IMPRESIÓN --- */
     @media print {
         body * { visibility: hidden; }
         #resultado-menu, #resultado-menu * { visibility: visible; }
-        #resultado-menu { 
-            position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; 
-            border: none !important; box-shadow: none !important; 
-        }
-        /* Ocultar botones y formularios */
-        button, .card, .chef-hero, .navbar, footer, .alert { display: none !important; }
+        #resultado-menu { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border: none !important; }
+        button, .card, .chef-hero, .navbar, footer { display: none !important; }
     }
 </style>
 
@@ -93,38 +42,40 @@
         <h1 class="display-4 fw-bold" style="font-family: 'Playfair Display', serif; color: var(--secondary-color);">
             Chef Virtual de Aprovechamiento
         </h1>
-        <p class="lead text-muted mx-auto" style="max-width: 700px;">
-            Genera menús nutritivos basados en el stock de tu centro. Reduce el desperdicio, maximiza el sabor.
-        </p>
     </div>
 </div>
 
 <div class="container pb-5">
-
     <div class="row justify-content-center">
         <div class="col-lg-8">
             
             <div class="card chef-card mb-5 d-print-none">
                 <div class="card-body p-5">
                     <form action="/chef" method="POST" onsubmit="mostrarCarga()">
-                        <label for="codigo" class="form-label fw-bold text-secondary text-uppercase small mb-3">
-                            Selecciona el Centro (Código Postal)
+                        <label class="form-label fw-bold text-secondary text-uppercase small mb-3">
+                            Selecciona el Centro (Municipio)
                         </label>
                         
                         <div class="d-flex gap-3">
                             <div class="input-group input-group-lg flex-grow-1 border rounded overflow-hidden">
                                 <span class="input-group-text"><i class="fas fa-map-marker-alt text-danger"></i></span>
-                                <input type="text" name="codigo_postal" class="form-control form-control-lg border-0" 
-                                       placeholder="Ej: 46001" required value="{{ codigo_postal if codigo_postal else '' }}">
+                                
+                                <select class="form-select form-select-lg border-0" name="codigo_postal" required>
+                                    <option value="" disabled {% if not codigo_postal %}selected{% endif %}>-- Elige ubicación --</option>
+                                    
+                                    {% for m in municipios %}
+                                        <option value="{{ m.code }}" {% if codigo_postal == m.code %}selected{% endif %}>
+                                            {{ m.name }} ({{ m.code }})
+                                        </option>
+                                    {% endfor %}
+                                    
+                                </select>
                             </div>
                             
                             <button type="submit" class="btn btn-lg text-white px-4 fw-bold shadow-sm" 
                                     style="background-color: var(--primary-color); border-radius: 8px;">
-                                <i class="fas fa-utensils me-2"></i> Crear Menú
+                                <i class="fas fa-utensils me-2"></i> Crear
                             </button>
-                        </div>
-                        <div class="form-text mt-2 ms-1 text-muted">
-                            <i class="fas fa-info-circle me-1"></i> La IA analizará el stock de este código postal.
                         </div>
                     </form>
                 </div>
@@ -133,7 +84,7 @@
             <div id="loading" class="loading-container d-print-none">
                 <div class="spinner-chef"></div>
                 <h4 class="text-secondary fw-bold">El Chef está pensando...</h4>
-                <p class="text-muted">Analizando ingredientes, combinando sabores y redactando recetas.</p>
+                <p class="text-muted">Analizando ingredientes y redactando recetas.</p>
             </div>
 
             {% if menu %}
@@ -156,29 +107,47 @@
                     <div class="card border-success mb-5 mt-4 shadow-sm d-print-none" style="background-color: #f1f8e9;">
                         <div class="card-body">
                             <h5 class="card-title text-success fw-bold">
-                                <i class="fas fa-save me-2"></i>Guardar Menú en Base de Datos
+                                <i class="fas fa-save me-2"></i>Guardar Menú
                             </h5>
-                            <p class="card-text small text-muted">Confirma el Código Postal y el plato principal antes de publicar.</p>
                             
                             <form action="{{ url_for('guardar_menu') }}" method="POST">
-                                <input type="hidden" name="contenido_menu" value="{{ menu }}">
+                                <textarea name="contenido_menu" style="display:none;">{{ menu }}</textarea>
                                 
                                 <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="cp_input" class="form-label fw-bold small text-dark">Código Postal:</label>
-                                        <input type="text" class="form-control border-success" 
-                                               name="codigo_postal" id="cp_input" 
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold small text-dark">Código Postal:</label>
+                                        <input type="text" class="form-control border-success bg-white" 
+                                               name="codigo_postal" 
                                                value="{{ codigo_postal }}" 
-                                               placeholder="Ej: 46001" required>
+                                               readonly>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold small text-dark">Plato Principal:</label>
+                                        <input type="text" class="form-control fw-bold text-primary" 
+                                               name="plato_principal" id="plato_principal" required>
                                     </div>
 
-                                    <div class="col-md-8 mb-3">
-                                        <label for="plato" class="form-label fw-bold small text-dark">Plato Principal (Resumen):</label>
-                                        <input type="text" class="form-control fw-bold text-primary" 
-                                               name="plato_principal" id="plato" required>
-                                        <div class="form-text small">
-                                            <i class="fas fa-magic me-1"></i> Detectado por IA. Edítalo si es necesario.
-                                        </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold small text-dark">Segundo Plato:</label>
+                                        <input type="text" class="form-control" 
+                                               name="segundo_plato" id="segundo_plato">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold small text-dark">Postre:</label>
+                                        <input type="text" class="form-control" 
+                                               name="postre" id="postre">
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold small text-dark">Acompañamiento:</label>
+                                        <input type="text" class="form-control" 
+                                               name="acompanamiento" id="acompanamiento">
                                     </div>
                                 </div>
                                 
@@ -188,73 +157,54 @@
                             </form>
                         </div>
                     </div>
-
                 </div>
 
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
                         const rawMarkdown = {{ menu | tojson }};
                         if (rawMarkdown) {
-                            // 1. Convertir Markdown
                             document.getElementById('resultado-menu').innerHTML = marked.parse(rawMarkdown);
-                            // 2. Detectar Plato
-                            detectarPlatoPrincipal(rawMarkdown);
+                            detectarPlatos(rawMarkdown);
                         }
                     });
 
-                    function detectarPlatoPrincipal(texto) {
+                    function detectarPlatos(texto) {
                         const lineas = texto.split('\n');
-                        let platoEncontrado = "";
+                        let platoPrincipal = "";
+                        let segundoPlato = "";
+                        let postre = "";
+                        let acompanamiento = "";
 
                         for (let linea of lineas) {
-                            const lineaBaja = linea.toLowerCase();
-                            // Buscamos palabras clave comunes
-                            if (lineaBaja.includes("segundo plato") || lineaBaja.includes("plato principal") || lineaBaja.includes("principal:")) {
-                                platoEncontrado = linea.replace(/[\*\-\#\_]/g, '')
-                                                       .replace(/Segundo Plato:/i, '')
-                                                       .replace(/Plato Principal:/i, '')
-                                                       .replace(/Principal:/i, '')
-                                                       .trim();
-                                break;
+                            const lowerLinea = linea.toLowerCase();
+                            
+                            if (lowerLinea.includes("plato principal") || lowerLinea.includes("primer plato")) {
+                                platoPrincipal = linea.replace(/[\*\-\#\_]/g, '').replace(/Plato Principal:/i, '').replace(/Primer Plato:/i, '').trim();
+                            } else if (lowerLinea.includes("segundo plato")) {
+                                segundoPlato = linea.replace(/[\*\-\#\_]/g, '').replace(/Segundo Plato:/i, '').trim();
+                            } else if (lowerLinea.includes("postre")) {
+                                postre = linea.replace(/[\*\-\#\_]/g, '').replace(/Postre:/i, '').trim();
+                            } else if (lowerLinea.includes("acompañamiento") || lowerLinea.includes("acompanamiento")) {
+                                acompanamiento = linea.replace(/[\*\-\#\_]/g, '').replace(/Acompañamiento:/i, '').replace(/Acompanamiento:/i, '').trim();
                             }
                         }
-                        // Plan B: Si no hay segundo, buscamos el primero
-                        if (!platoEncontrado) {
-                             for (let linea of lineas) {
-                                const lineaBaja = linea.toLowerCase();
-                                if (lineaBaja.includes("primer plato") || lineaBaja.includes("primero:")) {
-                                    platoEncontrado = linea.replace(/[\*\-\#\_]/g, '')
-                                                           .replace(/Primer Plato:/i, '')
-                                                           .replace(/Primero:/i, '')
-                                                           .trim();
-                                    break;
-                                }
-                             }
-                        }
-                        // Escribir en el input
-                        if (platoEncontrado) { document.getElementById('plato').value = platoEncontrado; }
+
+                        if (platoPrincipal) document.getElementById('plato_principal').value = platoPrincipal;
+                        if (segundoPlato) document.getElementById('segundo_plato').value = segundoPlato;
+                        if (postre) document.getElementById('postre').value = postre;
+                        if (acompanamiento) document.getElementById('acompanamiento').value = acompanamiento;
                     }
 
                     function descargarPDF() {
                         const element = document.getElementById('resultado-menu');
-                        const opt = {
-                            margin: [0.5, 0.5],
-                            filename: 'menu-comedor.pdf',
-                            image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2 },
-                            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-                        };
+                        const opt = { margin: 0.5, filename: 'menu.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4' } };
                         html2pdf().set(opt).from(element).save();
                     }
                 </script>
             {% endif %}
 
-            {% if menu and "Ocurrió un error" in menu|string %}
-                <div class="alert alert-danger shadow-sm border-0 rounded-3 p-4 text-center mt-4 d-print-none">
-                    <i class="fas fa-exclamation-triangle fa-2x mb-3 text-danger"></i>
-                    <h5>Ups, algo salió mal en la cocina</h5>
-                    <p class="mb-0">{{ menu }}</p>
-                </div>
+            {% if menu and "Error" in menu|string %}
+                <div class="alert alert-danger mt-4">{{ menu }}</div>
             {% endif %}
 
         </div>
@@ -263,8 +213,7 @@
 
 <script>
     function mostrarCarga() {
-        const menuContainer = document.getElementById('menu-container');
-        if(menuContainer) menuContainer.style.display = 'none';
+        if(document.getElementById('menu-container')) document.getElementById('menu-container').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
     }
 </script>
