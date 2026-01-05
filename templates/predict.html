@@ -5,7 +5,7 @@
 <style>
     /* Estilos específicos para la sección de Predicción */
     .predict-hero {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); /* Azul suave tecnológico */
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
         padding: 40px 0;
         border-bottom: 1px solid #bbdefb;
         margin-bottom: 30px;
@@ -18,7 +18,6 @@
         overflow: hidden;
     }
 
-    /* Estilos de inputs */
     .input-group-text {
         background-color: #f8f9fa;
         border: 1px solid #ced4da;
@@ -26,12 +25,13 @@
         color: var(--secondary-color);
     }
     
-    .form-control {
+    /* Añadimos soporte para form-select */
+    .form-control, .form-select {
         border-left: 0;
         padding: 12px;
     }
     
-    .form-control:focus {
+    .form-control:focus, .form-select:focus {
         box-shadow: none;
         border-color: #ced4da;
         background-color: #fff;
@@ -42,11 +42,10 @@
         background-color: #fff;
     }
     
-    .input-group:focus-within .form-control {
+    .input-group:focus-within .form-control, .input-group:focus-within .form-select {
         border-color: var(--secondary-color);
     }
 
-    /* Tarjeta de Resultados */
     .result-display {
         background: linear-gradient(135deg, var(--secondary-color) 0%, #143642 100%);
         color: white;
@@ -58,7 +57,6 @@
         overflow: hidden;
     }
 
-    /* Efecto de fondo gráfico sutil */
     .result-display::before {
         content: '';
         position: absolute;
@@ -83,7 +81,6 @@
         padding: 20px;
         border: 1px solid #eee;
     }
-
 </style>
 
 <div class="predict-hero">
@@ -157,26 +154,45 @@
 
                 <div class="card predict-card">
                     <div class="card-header bg-white border-bottom py-3 text-center">
-                        <h5 class="mb-0 fw-bold text-secondary">Introduce los variables</h5>
+                        <h5 class="mb-0 fw-bold text-secondary">Introduce las variables</h5>
                     </div>
                     <div class="card-body p-4 p-lg-5">
                         <form action="/predict" method="POST">
                             
+                            <input type="hidden" id="municipio" name="municipio" value="">
+
                             <div class="mb-4">
-                                <label for="municipio" class="form-label fw-bold text-secondary small text-uppercase">Municipio</label>
+                                <label for="codigo_postal" class="form-label fw-bold text-secondary small text-uppercase">
+                                    Municipio / Centro
+                                </label>
                                 <div class="input-group input-group-lg">
-                                    <span class="input-group-text"><i class="fas fa-city"></i></span>
-                                    <input type="text" id="municipio" name="municipio" class="form-control" placeholder="Ej: Valencia" required>
+                                    <span class="input-group-text"><i class="fas fa-map-marked-alt"></i></span>
+                                    
+                                    <select class="form-select" id="codigo_postal" name="codigo_postal" required onchange="actualizarMunicipio()">
+                                        <option value="" disabled selected>-- Selecciona una opción --</option>
+                                        
+                                        {% for m in municipios %}
+                                            <option value="{{ m.code }}" data-name="{{ m.name }}">
+                                                {{ m.name }} ({{ m.code }})
+                                            </option>
+                                        {% endfor %}
+                                        
+                                    </select>
                                 </div>
                             </div>
 
-                            <div class="mb-4">
-                                <label for="codigo_postal" class="form-label fw-bold text-secondary small text-uppercase">Código Postal</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text"><i class="fas fa-map-marked-alt"></i></span>
-                                    <input type="text" id="codigo_postal" name="codigo_postal" class="form-control" placeholder="Ej: 46001" required>
-                                </div>
-                            </div>
+                            <script>
+                                function actualizarMunicipio() {
+                                    var select = document.getElementById('codigo_postal');
+                                    var selectedOption = select.options[select.selectedIndex];
+                                    
+                                    // Cogemos el nombre del atributo data-name
+                                    var nombre = selectedOption.getAttribute('data-name');
+                                    
+                                    // Lo ponemos en el input oculto
+                                    document.getElementById('municipio').value = nombre;
+                                }
+                            </script>
 
                             <div class="mb-5">
                                 <label for="temperatura" class="form-label fw-bold text-secondary small text-uppercase">Temperatura Prevista (ºC)</label>
@@ -204,5 +220,18 @@
         </div>
     </div>
 </div>
+
+<script>
+    function actualizarMunicipio() {
+        var select = document.getElementById('codigo_postal');
+        var selectedOption = select.options[select.selectedIndex];
+        
+        // Obtenemos el nombre guardado en data-name
+        var nombreMunicipio = selectedOption.getAttribute('data-name');
+        
+        // Lo ponemos en el input oculto para que se envíe al servidor
+        document.getElementById('municipio_input').value = nombreMunicipio;
+    }
+</script>
 
 {% endblock %}

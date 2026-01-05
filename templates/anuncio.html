@@ -13,16 +13,16 @@
 
     /* --- CORRECCIÓN DE VISIBILIDAD DE TABS --- */
     .nav-pills {
-        background-color: #e9ecef; /* Un gris más visible para el fondo de la barra */
+        background-color: #e9ecef;
         padding: 5px;
         border-radius: 50px;
         border: 1px solid #ced4da;
     }
     
     .nav-pills .nav-link {
-        color: #495057 !important; /* Forzamos color GRIS OSCURO/CASI NEGRO */
+        color: #495057 !important;
         background-color: transparent;
-        font-weight: 700; /* Texto más grueso para que se lea mejor */
+        font-weight: 700;
         border-radius: 50px;
         padding: 12px 20px;
         transition: all 0.3s ease;
@@ -30,64 +30,39 @@
     }
 
     .nav-pills .nav-link:hover {
-        background-color: rgba(0,0,0,0.05); /* Sutil fondo al pasar el ratón */
-        color: #000 !important; /* Negro puro al pasar el ratón */
+        background-color: rgba(0,0,0,0.05);
+        color: #000 !important;
     }
 
     .nav-pills .nav-link.active {
-        background-color: var(--secondary-color) !important; /* Tu color corporativo (Azul petróleo) */
-        color: white !important; /* Texto blanco solo cuando está activo */
+        background-color: var(--secondary-color) !important;
+        color: white !important;
         box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
     /* --- ESTILOS POST INSTAGRAM --- */
     .insta-card {
-        background: white;
-        border: 1px solid #dbdbdb;
-        border-radius: 8px;
-        max-width: 400px;
-        margin: 0 auto;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        overflow: hidden;
+        background: white; border: 1px solid #dbdbdb; border-radius: 8px;
+        max-width: 400px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden;
     }
     .insta-header { padding: 14px; display: flex; align-items: center; border-bottom: 1px solid #efefef; }
     .insta-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; border: 1px solid #dbdbdb; }
     .insta-image-area {
-        aspect-ratio: 1 / 1;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 30px;
-        position: relative;
-        color: #333;
+        aspect-ratio: 1 / 1; width: 100%; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; text-align: center; padding: 30px; position: relative; color: #333;
     }
     .insta-overlay {
-        background: rgba(255, 255, 255, 0.90);
-        backdrop-filter: blur(4px);
-        padding: 20px;
-        border-radius: 12px;
-        width: 90%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        background: rgba(255, 255, 255, 0.90); backdrop-filter: blur(4px); padding: 20px;
+        border-radius: 12px; width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
     .insta-actions { padding: 10px 14px; font-size: 1.5rem; display: flex; gap: 16px; }
     .insta-content { padding: 0 14px 20px 14px; font-size: 0.9rem; line-height: 1.5; }
 
     /* --- ESTILOS CARTEL --- */
     .poster-card {
-        background: white;
-        width: 100%;
-        max-width: 450px;
-        aspect-ratio: 1 / 1.414;
-        margin: 0 auto;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid #eee;
+        background: white; width: 100%; max-width: 450px; aspect-ratio: 1 / 1.414;
+        margin: 0 auto; box-shadow: 0 15px 40px rgba(0,0,0,0.15); display: flex;
+        flex-direction: column; position: relative; overflow: hidden; border: 1px solid #eee;
     }
     .poster-header { padding: 30px 20px; text-align: center; background: #333; color: white; }
     .poster-body { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
@@ -98,6 +73,11 @@
 
     /* Loader */
     .loader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; text-align: center; padding-top: 20%; }
+    
+    /* Inputs */
+    .input-group-text { background-color: #f8f9fa; border-right: 0; }
+    .form-control, .form-select { border-left: 0; padding: 12px; }
+    .form-control:focus, .form-select:focus { box-shadow: none; border-color: #ced4da; background-color: #fff; }
 
     /* Impresión */
     @media print {
@@ -129,10 +109,10 @@
         <h4 class="mt-3 text-secondary fw-bold">Diseñando campaña...</h4>
     </div>
 
-    {% if error %}
+    {% if error_msg %}
         <div class="alert alert-danger shadow-sm border-0 rounded-3 d-flex align-items-center mb-4 max-w-600 mx-auto">
             <i class="fas fa-exclamation-circle fa-lg me-3"></i>
-            <div>{{ error }}</div>
+            <div>{{ error_msg }}</div>
         </div>
     {% endif %}
 
@@ -234,7 +214,7 @@
 
                     <div class="d-grid gap-3">
                         <form action="/anuncio" method="POST" onsubmit="mostrarCarga()">
-                            <input type="hidden" name="codigo_postal" value="{{ codigo_postal_previo }}">
+                            <input type="hidden" name="codigo_postal" value="{{ codigo_postal }}">
                             <button type="submit" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-sync-alt me-2"></i> Regenerar Opciones
                             </button>
@@ -256,6 +236,7 @@
         </script>
 
     {% else %}
+        
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
                 <div class="card border-0 shadow-lg" style="border-radius: 20px;">
@@ -265,10 +246,20 @@
                     <div class="card-body p-5">
                         <form action="/anuncio" method="POST" onsubmit="mostrarCarga()">
                             <div class="mb-4">
-                                <label class="form-label fw-bold small text-uppercase text-secondary">Ubicación (CP)</label>
+                                <label class="form-label fw-bold small text-uppercase text-secondary">Centro (Municipio)</label>
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt text-danger"></i></span>
-                                    <input type="text" name="codigo_postal" class="form-control" placeholder="Ej: 46001" required>
+                                    
+                                    <select class="form-select" name="codigo_postal" required>
+                                        <option value="" disabled {% if not codigo_postal %}selected{% endif %}>-- Elige ubicación --</option>
+                                        
+                                        {% for m in municipios %}
+                                            <option value="{{ m.code }}" {% if codigo_postal == m.code %}selected{% endif %}>
+                                                {{ m.name }} ({{ m.code }})
+                                            </option>
+                                        {% endfor %}
+                                        
+                                    </select>
                                 </div>
                             </div>
                             <div class="d-grid">
