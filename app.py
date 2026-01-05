@@ -990,25 +990,30 @@ def index():
     collection_alert = db['Alertas']
     total_alertas = collection_alert.count_documents({})
 
+    posiblidad_donacion = 0.3  # 30% de probabilidad de donación real
+
     # simulación de donación cada vez que se carga el home
     choice =  random.randint(0, 1)
-    if choice == 1:
 
-        try:
-            # obtención de una donación real (si la hay)
-            record = get_donation()
-        
-        except Exception:
-            # simulamos la donación si no hay una real
+    if random.random() < posiblidad_donacion:
+
+        if choice == 1:
+
+            try:
+                # obtención de una donación real (si la hay)
+                record = get_donation()
+            
+            except Exception:
+                # simulamos la donación si no hay una real
+                record = simulate_donation_from_inventory()
+
+        else:
+            # simulamos una donación
             record = simulate_donation_from_inventory()
 
-    else:
-        # simulamos una donación
-        record = simulate_donation_from_inventory()
-
-    # procesado de la donación y generación de alerta
-    process_donation(record)
-    generar_alerta()
+        # procesado de la donación y generación de alerta
+        process_donation(record)
+        generar_alerta()
 
     return render_template('index.html', total_alertas=total_alertas, menu_hoy=menu_hoy)
 
