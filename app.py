@@ -1989,20 +1989,11 @@ def guardar_menu():
     acomp = request.form.get('acompanamiento')
     cp = request.form.get('codigo_postal')
 
-    # 2. DIAGNÓSTICO (Mira la consola negra al darle a guardar)
-    print(f"--- INTENTO DE GUARDADO ---")
-    print(f"CP: {cp}")
-    print(f"Plato: {plato}")
-    print(f"Contenido (longitud): {len(contenido) if contenido else 0}")
-
-    # 3. Validación
     if not contenido or not cp:
-        print("❌ ERROR: Faltan datos obligatorios (CP o Contenido)")
+        print("ERROR: Faltan datos obligatorios (CP o Contenido)")
         return redirect(url_for('chef'))
     
     hoy = date.today().strftime('%Y-%m-%d')
-
-    # 4. Preparar datos
     filtro = {'fecha': hoy, 'codigo_postal': cp}
     
     nuevos_datos = {
@@ -2012,18 +2003,17 @@ def guardar_menu():
             'postre': postre,
             'acompañamiento': acomp,
             'contenido': contenido,
-            # Aseguramos campos clave
             'fecha': hoy,
             'codigo_postal': cp
         }
     }
 
-    # 5. Guardar en Mongo (Upsert = Si existe actualiza, si no crea)
+    # guardado en Mongo
     try:
         db.Menus.update_one(filtro, nuevos_datos, upsert=True)
-        print("✅ GUARDADO EXITOSO EN MONGO")
+        print("GUARDADO EXITOSO EN MONGO")
     except Exception as e:
-        print(f"❌ ERROR MONGO: {e}")
+        print(f"ERROR MONGO: {e}")
 
     return redirect(url_for('index'))
 
