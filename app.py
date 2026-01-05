@@ -992,7 +992,7 @@ def index():
     collection_alert = db['Alertas']
     total_alertas = collection_alert.count_documents({})
 
-    posiblidad_donacion = 0.3  # 30% de probabilidad de donación real
+    posiblidad_donacion = 0.1  # 10% de probabilidad de donación real
 
     # simulación de donación cada vez que se carga el home
     choice =  random.randint(0, 1)
